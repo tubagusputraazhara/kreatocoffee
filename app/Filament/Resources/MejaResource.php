@@ -49,14 +49,14 @@ class Mejaresource extends Resource
                     ->unique(ignoreRecord: true)
                     ->maxLength(50),
 
-                FileUpload::make('foto_meja')
-                    ->label('Foto Meja')
-                    ->image()
-                    ->imageEditor()
-                    ->directory('meja')
-                    ->imageResizeMode('cover')
-                    ->imageResizeTargetWidth('300')
-                    ->imageResizeTargetHeight('300'),
+                // FileUpload::make('foto_meja')
+                //     ->label('Foto Meja')
+                //     ->image()
+                //     ->imageEditor()
+                //     ->directory('meja')
+                //     ->imageResizeMode('cover')
+                //     ->imageResizeTargetWidth('300')
+                //     ->imageResizeTargetHeight('300'),
 
                 FileUpload::make('qr_code_path')
                     ->label('QR Code')
@@ -89,8 +89,6 @@ class Mejaresource extends Resource
                     ->options([
                         'indoor' => 'Indoor',
                         'outdoor' => 'Outdoor',
-                        'vip' => 'VIP',
-                        'family' => 'Family',
                     ])
                     ->default('indoor')
                     ->required(),
@@ -100,15 +98,15 @@ class Mejaresource extends Resource
                     ->maxLength(500)
                     ->rows(3),
 
-                TextInput::make('harga_minimum')
-                    ->label('Harga Minimum')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->default(0),
+                // TextInput::make('harga_minimum')
+                //     ->label('Harga Minimum')
+                //     ->numeric()
+                //     ->prefix('Rp')
+                //     ->default(0),
 
-                DatePicker::make('tanggal_perawatan')
-                    ->label('Tanggal Perawatan')
-                    ->displayFormat('d/m/Y'),
+                // DatePicker::make('tanggal_perawatan')
+                //     ->label('Tanggal Perawatan')
+                //     ->displayFormat('d/m/Y'),
 
                 Toggle::make('is_active')
                     ->label('Aktif')
@@ -133,10 +131,10 @@ class Mejaresource extends Resource
                     ->badge()
                     ->color('primary'),
 
-                ImageColumn::make('foto_meja')
-                    ->label('Foto')
-                    ->size(60)
-                    ->circular(),
+                // ImageColumn::make('foto_meja')
+                //     ->label('Foto')
+                //     ->size(60)
+                //     ->circular(),
 
                 ImageColumn::make('qr_code_path')
                     ->label('QR Code')
@@ -166,10 +164,10 @@ class Mejaresource extends Resource
                         'family' => 'indigo',
                     ]),
 
-                TextColumn::make('harga_minimum')
-                    ->label('Min. Order')
-                    ->money('IDR')
-                    ->sortable(),
+                // TextColumn::make('harga_minimum')
+                //     ->label('Min. Order')
+                //     ->money('IDR')
+                //     ->sortable(),
 
                 IconColumn::make('is_active')
                     ->label('Status')
