@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Meja extends Model
 {
@@ -12,8 +13,6 @@ class Meja extends Model
     protected $table = 'meja'; // Tanpa 's'
 
     protected $guarded = [];
-
-    use Illuminate\Support\Facades\DB;
 
     public static function getIdMeja()
     {
