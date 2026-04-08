@@ -26,7 +26,7 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; //produk
 
     public static function form(Form $form): Form
     {
@@ -51,7 +51,7 @@ class MenuResource extends Resource
 
                 // Harga
                 TextInput::make('harga')
-                    ->label('Harga')
+                    ->label('Harga') //formatStateUsing(fn (string $state): string => 'Rp ' . number_format($state, 0, ',', '.')),
                     ->numeric()
                     ->prefix('Rp')
                     ->required(),
@@ -105,8 +105,8 @@ class MenuResource extends Resource
 
                 // Menampilkan Harga
                 TextColumn::make('harga')
-                    ->label('Harga')
-                    ->money('idr'),
+                    ->label('Harga') //prefix('Rp')
+                    ->money('idr'), //, locale: 'id'
 
                 // Menampilkan Kategori
                 TextColumn::make('kategori')
