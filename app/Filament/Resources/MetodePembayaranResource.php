@@ -33,6 +33,15 @@ class MetodePembayaranResource extends Resource
     {
         return $form
             ->schema([
+                TextInput::make('kode_metode')
+                    ->label('Kode Metode')
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->prefix('MP-')
+                    ->placeholder('Masukkan kode metode')
+                    ->formatStateUsing(fn ($state) => str_replace('MP-', '', $state))
+                    ->rule('alpha_dash'),
+
                 TextInput::make('nama_metode')
                     ->label('Nama Metode')
                     ->required()
@@ -69,6 +78,11 @@ class MetodePembayaranResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('kode_metode')
+                    ->label('Kode')
+                    ->badge()
+                    ->color('primary'),
+
                 TextColumn::make('nama_metode')
                     ->label('Nama Metode')
                     ->searchable()

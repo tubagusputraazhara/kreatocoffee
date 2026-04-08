@@ -18,4 +18,12 @@ class MetodePembayaran extends Model
     {
         return $this->hasMany(Pembayaran::class, 'metode_pembayaran_id');
     }
+    public function setKodeMetodeAttribute($value)
+    {
+        if (str_starts_with($value, 'MP-')) {
+            $this->attributes['kode_metode'] = strtoupper($value);
+        } else {
+            $this->attributes['kode_metode'] = 'MP-' . strtoupper($value);
+        }
+    }
 }
