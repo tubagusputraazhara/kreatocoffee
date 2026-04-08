@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('metode_pembayaran', function (Blueprint $table) {
             $table->id();
+            $table->string('kode_metode')->unique(); // MP-QRIS, MP-OVO
             $table->string('nama_metode')->unique(); // contoh: Cash, QRIS
             $table->enum('jenis', ['tunai', 'non_tunai', 'ewallet'])->default('non_tunai');
             $table->decimal('biaya_admin', 10, 2)->default(0);

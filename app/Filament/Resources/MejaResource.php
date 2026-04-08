@@ -42,12 +42,17 @@ class Mejaresource extends Resource
                     ->label('Nama Meja')
                     ->required()
                     ->maxLength(100),
-
+                // TextInput::make('id_meja')
+                //     ->label('ID Meja')
+                //     ->required()
+                //     ->unique(ignoreRecord: true)
+                //     ->maxLength(50),
                 TextInput::make('id_meja')
                     ->label('ID Meja')
+                    ->default(fn () => \App\Models\Meja::getIdMeja())
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(50),
+                    ->readonly(),
 
                 // FileUpload::make('foto_meja')
                 //     ->label('Foto Meja')
@@ -160,8 +165,8 @@ class Mejaresource extends Resource
                     ->colors([
                         'indoor' => 'blue',
                         'outdoor' => 'green',
-                        'vip' => 'purple',
-                        'family' => 'indigo',
+                        // 'vip' => 'purple',
+                        // 'family' => 'indigo',
                     ]),
 
                 // TextColumn::make('harga_minimum')
