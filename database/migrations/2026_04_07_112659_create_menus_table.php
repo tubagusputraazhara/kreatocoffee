@@ -18,7 +18,7 @@ return new class extends Migration
             $table->enum('kategori', ['Makanan', 'Minuman']);
             $table->string('gambar'); 
             $table->text('deskripsi'); 
-            $table->boolean('is_admin')->default(true); // Status Menu (Tersedia = 1, Habis = 0)
+            //$table->boolean('is_admin')->default(true); // Status Menu (Tersedia = 1, Habis = 0)
             $table->timestamps();
 });
        
