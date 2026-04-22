@@ -26,7 +26,7 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     */
+     */ //aahahahahah
     public function down(): void
     {
         Schema::dropIfExists('menu');
