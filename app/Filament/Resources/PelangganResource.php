@@ -24,6 +24,9 @@ class PelangganResource extends Resource
                 //Forms\Components\TextInput::make('kode_pelanggan')
                   //  ->required()
                     //->unique(ignoreRecord: true),
+                    //Forms\Components\TextInput::make('kode_pelanggan')
+                  //  ->required()
+                    //->unique(ignoreRecord: true),
 
                 Forms\Components\TextInput::make('nama_pelanggan')
                     ->required(),
