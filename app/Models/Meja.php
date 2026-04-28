@@ -29,3 +29,4 @@ class Meja extends Model
         return 'MJ-' . str_pad($number, 3, "0", STR_PAD_LEFT);
     }
 }
+//

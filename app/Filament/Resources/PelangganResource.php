@@ -70,7 +70,7 @@ class PelangganResource extends Resource
 
                 Tables\Columns\TextColumn::make('nama_pelanggan')
                     ->searchable(),
-
+//
                 Tables\Columns\TextColumn::make('no_hp'),
 
                 Tables\Columns\IconColumn::make('is_active')

@@ -16,3 +16,4 @@ class menu extends Model
 
     protected $guarded = [];
 }
+//

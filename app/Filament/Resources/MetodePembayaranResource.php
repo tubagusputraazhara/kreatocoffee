@@ -73,7 +73,7 @@ class MetodePembayaranResource extends Resource
                     ->default(true),
             ]);
     }
-
+//
     public static function table(Table $table): Table
     {
         return $table

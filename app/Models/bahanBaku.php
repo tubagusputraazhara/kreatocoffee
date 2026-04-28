@@ -33,3 +33,4 @@ class bahanBaku extends Model
         });
     }
 }
+//

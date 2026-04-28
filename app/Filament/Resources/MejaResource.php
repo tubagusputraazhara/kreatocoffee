@@ -102,7 +102,7 @@ class Mejaresource extends Resource
                     ->label('Deskripsi')
                     ->maxLength(500)
                     ->rows(3),
-
+//
                 // TextInput::make('harga_minimum')
                 //     ->label('Harga Minimum')
                 //     ->numeric()

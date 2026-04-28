@@ -43,7 +43,7 @@ class MenuResource extends Resource
                 ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
                 ->required() // Wajib untuk diisi
                 ->unique(ignoreRecord: true), // Unique= tidak boleh sama, dan data sudah otomatis
-                
+             //   
                 // Nama Menu
                 TextInput::make('nama_menu')
                     ->label('Nama Menu')
