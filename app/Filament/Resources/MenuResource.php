@@ -78,10 +78,10 @@ class MenuResource extends Resource
                     ->required(),
 
                 // Status Menu
-                Toggle::make('is_admin')
-                    ->label('Tersedia')
-                    ->default(true)
-                    ->required(),
+                //Toggle::make('is_admin')
+                //    ->label('Tersedia')
+                //    ->default(true)
+                //    ->required(),
             ]);
     }
 
@@ -123,9 +123,9 @@ class MenuResource extends Resource
                     ->limit(50),
 
                 // Menampilkan Status Tersedia (is_admin)
-                IconColumn::make('is_admin')
-                    ->label('Status Tersedia')
-                    ->boolean(),
+                //IconColumn::make('is_admin')
+                   // ->label('Status Tersedia')
+                    //->boolean(),
             ])
             ->filters([
                 //
