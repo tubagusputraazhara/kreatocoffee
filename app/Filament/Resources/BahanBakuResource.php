@@ -22,10 +22,10 @@ class BahanBakuResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('kode_bahan')
-                    ->required()
-                    ->unique(ignoreRecord: true)
-                    ->maxLength(50),
+                //Forms\Components\TextInput::make('kode_bahan')
+                  //  ->required()
+                  //  ->unique(ignoreRecord: true)
+                  //  ->maxLength(50),
 
                 Forms\Components\TextInput::make('nama_bahan')
                     ->required()
@@ -48,14 +48,14 @@ class BahanBakuResource extends Resource
                     ->prefix('Rp')
                     ->required(),
 
-                Forms\Components\Textarea::make('deskripsi')
-                    ->rows(3)
-                    ->nullable(),
+                //Forms\Components\Textarea::make('deskripsi')
+                  //  ->rows(3)
+                  //  ->nullable(),
 
-                Forms\Components\FileUpload::make('gambar')
-                    ->image()
-                    ->directory('bahan-baku')
-                    ->nullable(),
+                //Forms\Components\FileUpload::make('gambar')
+                  //  ->image()
+                  //  ->directory('bahan-baku')
+                  //  ->nullable(),
             ]);
     }
 
@@ -69,9 +69,9 @@ class BahanBakuResource extends Resource
                     ->searchable(),
                 // -------------------------------
 
-                Tables\Columns\TextColumn::make('kode_bahan')
-                    ->searchable()
-                    ->sortable(),
+               // Tables\Columns\TextColumn::make('kode_bahan')
+                 //   ->searchable()
+                 //   ->sortable(),
 
                 Tables\Columns\TextColumn::make('nama_bahan')
                     ->searchable()
@@ -89,11 +89,11 @@ class BahanBakuResource extends Resource
                 Tables\Columns\TextColumn::make('harga')
                     ->money('IDR', true),
 
-                Tables\Columns\TextColumn::make('supplier')
-                    ->toggleable(),
+                //Tables\Columns\TextColumn::make('supplier')
+                   // ->toggleable(),
 
-                Tables\Columns\ImageColumn::make('gambar')
-                    ->size(50),
+                //Tables\Columns\ImageColumn::make('gambar')
+                  //  ->size(50),
             ])
             ->filters([
                 //
