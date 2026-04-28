@@ -24,7 +24,7 @@ class pelanggan extends Model
     protected static function boot()
     {
         parent::boot();
-
+//
         static::creating(function ($model) {
             // Cari data terakhir untuk mengambil ID tertinggi
             $latest = self::orderBy('id', 'desc')->first();

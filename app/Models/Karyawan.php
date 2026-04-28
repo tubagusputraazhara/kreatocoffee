@@ -19,3 +19,4 @@ class Karyawan extends Model
         'tanggal_lahir',
     ];
 }
+//

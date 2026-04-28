@@ -58,7 +58,7 @@ class BahanBakuResource extends Resource
                   //  ->nullable(),
             ]);
     }
-
+//
     public static function table(Table $table): Table
     {
         return $table
