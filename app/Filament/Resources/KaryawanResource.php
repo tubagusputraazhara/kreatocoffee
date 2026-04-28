@@ -61,9 +61,17 @@ class KaryawanResource extends Resource
                 DatePicker::make('tanggal_lahir')
                     ->label('Tanggal Lahir')
                     ->required(),
+
+                TextInput::make('gaji')
+                    ->label('Gaji')
+                    ->required()
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->minValue(0)
+                    ->placeholder('Contoh: 3000000'),
             ]);
     }
-//
+
     public static function table(Table $table): Table
     {
         return $table
@@ -84,6 +92,11 @@ class KaryawanResource extends Resource
 
                 TextColumn::make('tanggal_lahir')
                     ->label('Tanggal Lahir')
+                    ->sortable(),
+
+                TextColumn::make('gaji')
+                    ->label('Gaji')
+                    ->money('IDR')
                     ->sortable(),
             ])
             ->filters([
