@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\BahanBakuResource\Pages;
+use App\Filament\Resources\bahanBakuResource\Pages;
 use App\Models\bahanBaku;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -10,12 +10,13 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-class BahanBakuResource extends Resource
+class bahanBakuResource extends Resource
 {
     protected static ?string $model = bahanBaku::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Bahan Baku';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $pluralLabel = 'Bahan Baku';
 
     public static function form(Form $form): Form

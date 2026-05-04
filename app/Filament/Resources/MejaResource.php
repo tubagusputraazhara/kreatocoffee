@@ -3,26 +3,21 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\Mejaresource\Pages;
-use App\Filament\Resources\Mejaresource\RelationManagers;
 use App\Models\Meja;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Actions\Action;
 
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ToggleColumn;
 
 class Mejaresource extends Resource
 {
@@ -31,6 +26,7 @@ class Mejaresource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-computer-desktop';
 
     protected static ?string $navigationLabel = 'Meja';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $pluralLabel = 'Meja';
     protected static ?string $modelLabel = 'Meja';
 
@@ -42,45 +38,13 @@ class Mejaresource extends Resource
                     ->label('Nama Meja')
                     ->required()
                     ->maxLength(100),
-                // TextInput::make('id_meja')
-                //     ->label('ID Meja')
-                //     ->required()
-                //     ->unique(ignoreRecord: true)
-                //     ->maxLength(50),
+
                 TextInput::make('id_meja')
                     ->label('ID Meja')
                     ->default(fn () => \App\Models\Meja::getIdMeja())
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->readonly(),
-
-                // FileUpload::make('foto_meja')
-                //     ->label('Foto Meja')
-                //     ->image()
-                //     ->imageEditor()
-                //     ->directory('meja')
-                //     ->imageResizeMode('cover')
-                //     ->imageResizeTargetWidth('300')
-                //     ->imageResizeTargetHeight('300'),
-
-                FileUpload::make('qr_code_path')
-                    ->label('QR Code')
-                    ->image()
-                    ->directory('qr-codes')
-                    ->imageResizeMode('contain')
-                    ->imageResizeTargetWidth('300')
-                    ->imageResizeTargetHeight('300'),
-
-                Select::make('status')
-                    ->label('Status')
-                    ->options([
-                        'tersedia' => 'Tersedia',
-                        'ditempati' => 'Ditempati',
-                        'reservasi' => 'Reservasi',
-                        'maintenance' => 'Maintenance',
-                    ])
-                    ->default('tersedia')
-                    ->required(),
 
                 TextInput::make('kapasitas')
                     ->label('Kapasitas')
@@ -92,7 +56,7 @@ class Mejaresource extends Resource
                 Select::make('lokasi')
                     ->label('Lokasi')
                     ->options([
-                        'indoor' => 'Indoor',
+                        'indoor'  => 'Indoor',
                         'outdoor' => 'Outdoor',
                     ])
                     ->default('indoor')
@@ -102,16 +66,6 @@ class Mejaresource extends Resource
                     ->label('Deskripsi')
                     ->maxLength(500)
                     ->rows(3),
-//
-                // TextInput::make('harga_minimum')
-                //     ->label('Harga Minimum')
-                //     ->numeric()
-                //     ->prefix('Rp')
-                //     ->default(0),
-
-                // DatePicker::make('tanggal_perawatan')
-                //     ->label('Tanggal Perawatan')
-                //     ->displayFormat('d/m/Y'),
 
                 Toggle::make('is_active')
                     ->label('Aktif')
@@ -136,54 +90,56 @@ class Mejaresource extends Resource
                     ->badge()
                     ->color('primary'),
 
-                // ImageColumn::make('foto_meja')
-                //     ->label('Foto')
-                //     ->size(60)
-                //     ->circular(),
-
                 ImageColumn::make('qr_code_path')
                     ->label('QR Code')
                     ->size(50)
                     ->square(),
-
-                BadgeColumn::make('status')
-                    ->label('Status')
-                    ->colors([
-                        'tersedia' => 'success',
-                        'ditempati' => 'danger',
-                        'reservasi' => 'warning',
-                        'maintenance' => 'gray',
-                    ]),
 
                 TextColumn::make('kapasitas')
                     ->label('Kapasitas')
                     ->suffix(' orang')
                     ->sortable(),
 
-                BadgeColumn::make('lokasi')
+                TextColumn::make('lokasi')
                     ->label('Lokasi')
-                    ->colors([
-                        'indoor' => 'blue',
-                        'outdoor' => 'green',
-                        // 'vip' => 'purple',
-                        // 'family' => 'indigo',
-                    ]),
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'indoor'  => 'info',
+                        'outdoor' => 'success',
+                        default   => 'gray',
+                    }),
 
-                // TextColumn::make('harga_minimum')
-                //     ->label('Min. Order')
-                //     ->money('IDR')
-                //     ->sortable(),
-
-                IconColumn::make('is_active')
-                    ->label('Status')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle'),
+                // Diganti dari IconColumn ke ToggleColumn
+                ToggleColumn::make('is_active')
+                    ->label('Aktif'),
             ])
             ->filters([
                 //
             ])
             ->actions([
+                // Preview QR → popup modal
+                Action::make('preview_qr')
+                    ->label('Preview QR')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading(fn ($record) => 'QR Code - ' . $record->nama_meja)
+                    ->modalContent(fn ($record) => view(
+                        'filament.modals.preview-qr',
+                        ['meja' => $record]
+                    ))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup'),
+
+                // Download QR langsung
+                Action::make('download_qr')
+                    ->label('Download QR')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('success')
+                    ->action(fn ($record) => response()->download(
+                        storage_path('app/public/' . $record->qr_code_path),
+                        'QRCode-' . $record->nama_meja . '.png'
+                    )),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -198,17 +154,15 @@ class Mejaresource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMejas::route('/'),
+            'index'  => Pages\ListMejas::route('/'),
             'create' => Pages\CreateMeja::route('/create'),
-            'edit' => Pages\EditMeja::route('/{record}/edit'),
+            'edit'   => Pages\EditMeja::route('/{record}/edit'),
         ];
     }
 }
