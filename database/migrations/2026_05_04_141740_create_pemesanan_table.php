@@ -37,9 +37,9 @@ return new class extends Migration
                   ->cascadeOnDelete();
         });
     }
-
     public function down(): void
     {
         Schema::dropIfExists('pemesanan');
     }
 };
+//
