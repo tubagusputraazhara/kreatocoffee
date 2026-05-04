@@ -34,6 +34,7 @@ class PenggajianResource extends Resource
     protected static ?string $model = Penggajian::class;
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationLabel = 'Penggajian';
+    protected static ?string $navigationGroup = 'Transaksi';
     protected static ?string $pluralModelLabel = 'Penggajian';
     protected static ?string $modelLabel = 'Penggajian';
     public static function form(Form $form): Form
