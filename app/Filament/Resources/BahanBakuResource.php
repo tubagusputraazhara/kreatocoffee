@@ -16,6 +16,7 @@ class BahanBakuResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationLabel = 'Bahan Baku';
+    protected static ?string $navigationGroup = 'Master Data';
     protected static ?string $pluralLabel = 'Bahan Baku';
 
     public static function form(Form $form): Form
