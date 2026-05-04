@@ -116,7 +116,7 @@ class pembelianBahanBakuResource extends Resource
                     ->label('Harga Satuan')
                     ->money('IDR')
                     ->sortable(),
-
+//
                 TextColumn::make('total_harga')
                     ->label('Total Bayar')
                     ->money('IDR')

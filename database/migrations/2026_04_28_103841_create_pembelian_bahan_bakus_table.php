@@ -28,3 +28,4 @@ return new class extends Migration {
         Schema::dropIfExists('pembelian_bahan_bakus');
     }
 };
+//
