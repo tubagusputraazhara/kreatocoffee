@@ -13,16 +13,14 @@ use Filament\Tables\Table;
 
 // Komponen Form
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;     // masih dipakai untuk bulan & status
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 
 // Komponen Table
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
 
 // Untuk set nilai otomatis
@@ -32,11 +30,19 @@ use Filament\Forms\Set;
 class PenggajianResource extends Resource
 {
     protected static ?string $model = Penggajian::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
-    protected static ?string $navigationLabel = 'Penggajian';
+
     protected static ?string $navigationGroup = 'Transaksi';
+
+    protected static ?string $navigationLabel = 'Penggajian';
+
     protected static ?string $pluralModelLabel = 'Penggajian';
+
     protected static ?string $modelLabel = 'Penggajian';
+
+    protected static ?int $navigationSort = 1;
+
     public static function form(Form $form): Form
     {
         return $form
@@ -51,48 +57,33 @@ class PenggajianResource extends Resource
                                 ->maxLength(50)
                                 ->placeholder('Contoh: GJI001'),
 
-                            TextInput::make('id_karyawan')
-                                ->label('ID Karyawan')
+                            Select::make('id_karyawan')
+                                ->label('Karyawan')
                                 ->required()
-                                ->maxLength(50)
-                                ->placeholder('Contoh: KYN001')
-                                ->live(onBlur: true)
-                                ->afterStateHydrated(function (Get $get, Set $set, ?string $state) {
-                                    // Saat halaman Edit dibuka, isi nama karyawan dari data yang ada
-                                    if ($state) {
-                                        $karyawan = Karyawan::find($state);
-                                        if ($karyawan) {
-                                            $set('nama_karyawan', $karyawan->nama);
-                                        }
-                                    }
-                                })
+                                ->searchable()
+                                ->live()
+                                // Tampilkan format: "KYN001 - Budi Santoso"
+                                ->options(
+                                    Karyawan::all()->mapWithKeys(fn ($k) => [
+                                        $k->id_karyawan => $k->id_karyawan . ' - ' . $k->nama
+                                    ])
+                                )
                                 ->afterStateUpdated(function (Get $get, Set $set, ?string $state) {
                                     if ($state) {
                                         $karyawan = Karyawan::find($state);
                                         if ($karyawan) {
-                                            // Otomatis isi nama dan gaji pokok dari data karyawan
-                                            $set('nama_karyawan', $karyawan->nama);
+                                            // Otomatis isi gaji pokok dari data karyawan
                                             $set('gaji_pokok', $karyawan->gaji);
                                             // Hitung ulang gaji bersih
                                             $tunjangan = (float) $get('tunjangan') ?? 0;
                                             $potongan  = (float) $get('potongan')  ?? 0;
                                             $set('gaji_bersih', ($karyawan->gaji + $tunjangan) - $potongan);
                                         } else {
-                                            // Reset jika ID tidak ditemukan
-                                            $set('nama_karyawan', null);
                                             $set('gaji_pokok', 0);
                                             $set('gaji_bersih', 0);
                                         }
                                     }
                                 }),
-                        ]),
-
-                        Grid::make(1)->schema([
-                            TextInput::make('nama_karyawan')
-                                ->label('Nama Karyawan')
-                                ->disabled()
-                                ->dehydrated(false) // hanya tampilan, tidak disimpan ke DB
-                                ->placeholder('Otomatis terisi setelah ID dimasukkan'),
                         ]),
 
                         Grid::make(2)->schema([
