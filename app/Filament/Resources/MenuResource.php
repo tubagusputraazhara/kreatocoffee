@@ -26,7 +26,7 @@ class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack'; //produk
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list'; //produk
 
     protected static ?string $navigationGroup = 'Master Data'; //bagian ini
     
