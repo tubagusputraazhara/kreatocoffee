@@ -16,6 +16,7 @@ class BiayaOperasionalResource extends Resource
 
     // Ikon uang di sidebar admin
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $navigationGroup = 'Transaksi';
 
     public static function form(Form $form): Form
     {
