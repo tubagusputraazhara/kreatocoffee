@@ -5,18 +5,10 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\JurnalUmumResource\Pages;
 use App\Models\JurnalUmum;
 
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-// Form Components
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Textarea;
-
-// Table Columns
 use Filament\Tables\Columns\TextColumn;
 
 class JurnalUmumResource extends Resource
@@ -27,39 +19,22 @@ class JurnalUmumResource extends Resource
 
     protected static ?string $navigationLabel = 'Jurnal Umum';
 
-    protected static ?string $navigationGroup = 'Transaksi';    
+    protected static ?string $navigationGroup = 'Laporan';
 
     protected static ?string $pluralLabel = 'Jurnal Umum';
 
     protected static ?string $modelLabel = 'Jurnal Umum';
 
-    public static function form(Form $form): Form
+    public static function form(\Filament\Forms\Form $form): \Filament\Forms\Form
     {
         return $form
-            ->schema([
-                TextInput::make('nomor_jurnal')
-                    ->label('Nomor Jurnal')
-                    ->required()
-                    ->unique(ignoreRecord: true),
-
-                DatePicker::make('tanggal_jurnal')
-                    ->label('Tanggal Jurnal')
-                    ->required(),
-
-                Textarea::make('keterangan')
-                    ->label('Keterangan')
-                    ->rows(3)
-                    ->nullable(),
-            ]);
+            ->schema([]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('id_jurnal')
-                    ->label('ID')
-                    ->sortable(),
 
                 TextColumn::make('nomor_jurnal')
                     ->label('Nomor Jurnal')
@@ -73,29 +48,48 @@ class JurnalUmumResource extends Resource
 
                 TextColumn::make('keterangan')
                     ->label('Keterangan')
+                    ->searchable()
                     ->limit(50),
+
+                TextColumn::make('detailJurnal_count')
+                    ->counts('detailJurnal')
+                    ->label('Detail'),
+
             ])
+
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
-            ]);
+
+            ->bulkActions([]);
     }
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\JurnalUmumResource\RelationManagers\DetailJurnalRelationManager::class,
+        ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete($record): bool
+    {
+        return false;
     }
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListJurnalUmums::route('/'),
-            'create' => Pages\CreateJurnalUmum::route('/create'),
-            'edit' => Pages\EditJurnalUmum::route('/{record}/edit'),
         ];
     }
 }
