@@ -27,6 +27,15 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 
+// tambahan untuk export excel
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ExportBulkAction;
+use App\Filament\Exports\PenggajianExporter;
+
+// tambahan untuk tombol unduh pdf
+use Filament\Tables\Actions\Action;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class PenggajianResource extends Resource
 {
     protected static ?string $model = Penggajian::class;
@@ -56,12 +65,10 @@ class PenggajianResource extends Resource
                             $count = \App\Models\Penggajian::count();
                             $nextNumber = $count + 1; //Menentukan nomor urut berikutnya
                             return 'GJI' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT); 
-        })
-
-                ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
-                ->required() // Wajib untuk diisi
-                ->unique(ignoreRecord: true),
-
+                        })
+                            ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
+                            ->required() // Wajib untuk diisi
+                            ->unique(ignoreRecord: true),
 
                             Select::make('id_karyawan')
                                 ->label('Karyawan')
@@ -274,10 +281,37 @@ class PenggajianResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
+
+            // tombol tambahan
+            ->headerActions([
+                // tombol export csv dan excel
+                ExportAction::make()->exporter(PenggajianExporter::class)->color('success'),
+
+                // tombol unduh PDF
+                Action::make('downloadPdf')
+                    ->label('Unduh PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $penggajians = Penggajian::with('karyawan')->get();
+
+                        $pdf = Pdf::loadView('pdf.penggajian', ['penggajians' => $penggajians])
+                            ->setPaper('a4', 'landscape'); // landscape karena kolom banyak
+
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            'laporan-penggajian.pdf'
+                        );
+                    })
+            ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+
+                // tambahan export excel bulk
+                ExportBulkAction::make()->exporter(PenggajianExporter::class)
             ]);
     }
 
