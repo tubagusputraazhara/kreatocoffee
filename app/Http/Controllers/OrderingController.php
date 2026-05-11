@@ -10,10 +10,17 @@ class OrderingController extends Controller
     // Halaman form awal
     public function index()
     {
-        // Daftar meja untuk dropdown (hardcode dulu, bisa diubah nanti)
         $daftarMeja = [
-            'Meja 1', 'Meja 2', 'Meja 3', 'Meja 4', 'Meja 5',
-            'Meja 6', 'Meja 7', 'Meja 8', 'Meja 9', 'Meja 10',
+            'Meja 1',
+            'Meja 2',
+            'Meja 3',
+            'Meja 4',
+            'Meja 5',
+            'Meja 6',
+            'Meja 7',
+            'Meja 8',
+            'Meja 9',
+            'Meja 10',
         ];
 
         return view('ordering.index', compact('daftarMeja'));
@@ -47,21 +54,26 @@ class OrderingController extends Controller
             return redirect()->route('order.index');
         }
 
-        $menus = Menu::where('status_menu', 'Tersedia')->get()->groupBy('kategori_menu');
-        $cart  = session('cart', []);
+        $menus = Menu::all()->groupBy('kategori');
+
+        $cart = session('cart', []);
 
         return view('ordering.menu', compact('menus', 'cart'));
     }
 
-    // Tambah ke keranjang (AJAX)
+    // Tambah ke keranjang
     public function addToCart(Request $request)
     {
         $cart = session('cart', []);
-        $id   = $request->id_menu;
+
+        $id = $request->id_menu;
 
         if (isset($cart[$id])) {
-            $cart[$id]['qty'] += 1;
+
+            $cart[$id]['qty']++;
+
         } else {
+
             $cart[$id] = [
                 'id_menu'   => $id,
                 'nama_menu' => $request->nama_menu,
@@ -72,7 +84,9 @@ class OrderingController extends Controller
 
         session(['cart' => $cart]);
 
-        $total = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+        $total = collect($cart)->sum(function ($item) {
+            return $item['harga'] * $item['qty'];
+        });
 
         return response()->json([
             'success' => true,
@@ -82,23 +96,30 @@ class OrderingController extends Controller
         ]);
     }
 
-    // Kurangi/hapus dari keranjang (AJAX)
+    // Kurangi cart
     public function removeFromCart(Request $request)
     {
         $cart = session('cart', []);
-        $id   = $request->id_menu;
+
+        $id = $request->id_menu;
 
         if (isset($cart[$id])) {
+
             if ($cart[$id]['qty'] > 1) {
-                $cart[$id]['qty'] -= 1;
+
+                $cart[$id]['qty']--;
+
             } else {
+
                 unset($cart[$id]);
             }
         }
 
         session(['cart' => $cart]);
 
-        $total = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+        $total = collect($cart)->sum(function ($item) {
+            return $item['harga'] * $item['qty'];
+        });
 
         return response()->json([
             'success' => true,
@@ -112,18 +133,24 @@ class OrderingController extends Controller
     public function updateCart(Request $request)
     {
         $cart = session('cart', []);
-        $id   = $request->id_menu;
-        $qty  = (int) $request->qty;
+
+        $id = $request->id_menu;
+        $qty = (int) $request->qty;
 
         if ($qty <= 0) {
+
             unset($cart[$id]);
+
         } else {
+
             $cart[$id]['qty'] = $qty;
         }
 
         session(['cart' => $cart]);
 
-        $total = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+        $total = collect($cart)->sum(function ($item) {
+            return $item['harga'] * $item['qty'];
+        });
 
         return response()->json([
             'success' => true,
@@ -140,22 +167,32 @@ class OrderingController extends Controller
             return redirect()->route('order.index');
         }
 
-        $cart  = session('cart', []);
-        $total = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+        $cart = session('cart', []);
+
+        $total = collect($cart)->sum(function ($item) {
+            return $item['harga'] * $item['qty'];
+        });
 
         return view('ordering.checkout', compact('cart', 'total'));
     }
 
-    // Proses pembayaran Midtrans
+    // Payment Midtrans
     public function payment(Request $request)
     {
-        // Akan diisi di step Midtrans
+        //
     }
 
-    // Halaman sukses
+    // Success
     public function success()
     {
-        session()->forget(['cart', 'nama_pemesan', 'no_meja', 'no_wa', 'email']);
+        session()->forget([
+            'cart',
+            'nama_pemesan',
+            'no_meja',
+            'no_wa',
+            'email'
+        ]);
+
         return view('ordering.success');
     }
 }

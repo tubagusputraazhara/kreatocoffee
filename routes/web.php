@@ -1,39 +1,43 @@
 <?php
+use App\Http\Controllers\OrderingController;
+use App\Http\Controllers\KasirController;
 
-use Illuminate\Support\Facades\Route;
+// =========================
+// CUSTOMER QR ORDERING
+// =========================
+Route::prefix('order')->name('order.')->group(function () {
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
-//
-Route::get('/', function () {
-    return view('welcome');
+    Route::get('/', [OrderingController::class, 'index'])->name('index');
+
+    Route::post('/store-info', [OrderingController::class, 'storeInfo'])->name('storeInfo');
+
+    Route::get('/menu', [OrderingController::class, 'menu'])->name('menu');
+
+    Route::post('/add-to-cart', [OrderingController::class, 'addToCart'])->name('addToCart');
+
+    Route::post('/remove-from-cart', [OrderingController::class, 'removeFromCart'])->name('removeFromCart');
+
+    Route::get('/checkout', [OrderingController::class, 'checkout'])->name('checkout');
+
+    Route::post('/payment', [OrderingController::class, 'payment'])->name('payment');
+
+    Route::get('/success', [OrderingController::class, 'success'])->name('success');
 });
 
-// ===== QR Ordering Customer =====
-Route::prefix('order')->name('order.')->group(function () {
-    // Form awal (nama, meja, WA, email)
-    Route::get('/', [App\Http\Controllers\OrderingController::class, 'index'])->name('index');
-    Route::post('/store-info', [App\Http\Controllers\OrderingController::class, 'storeInfo'])->name('storeInfo');
 
-    // Halaman pilih menu
-    Route::get('/menu', [App\Http\Controllers\OrderingController::class, 'menu'])->name('menu');
+// =========================
+// KASIR POS
+// =========================
+Route::prefix('kasir')->name('kasir.')->group(function () {
 
-    // Keranjang (AJAX)
-    Route::post('/add-to-cart', [App\Http\Controllers\OrderingController::class, 'addToCart'])->name('addToCart');
-    Route::post('/remove-from-cart', [App\Http\Controllers\OrderingController::class, 'removeFromCart'])->name('removeFromCart');
-    Route::post('/update-cart', [App\Http\Controllers\OrderingController::class, 'updateCart'])->name('updateCart');
+    Route::get('/', [KasirController::class, 'index'])->name('index');
 
-    // Checkout & pembayaran
-    Route::get('/checkout', [App\Http\Controllers\OrderingController::class, 'checkout'])->name('checkout');
-    Route::post('/payment', [App\Http\Controllers\OrderingController::class, 'payment'])->name('payment');
-    Route::get('/success', [App\Http\Controllers\OrderingController::class, 'success'])->name('success');
+    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
+
+    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
+
+    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
+
+    Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
 });
 
