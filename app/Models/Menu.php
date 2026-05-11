@@ -2,18 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class menu extends Model
+class Menu extends Model
 {
-    use HasFactory;
+    protected $table = 'menu';
 
-    protected $table = 'menu'; // Nama tabel eksplisit
-    protected $primaryKey = 'id_menu'; // untuk id_menu
-    public $incrementing = false;     // isinya M001 (bukan angka 1,2,3)
-    protected $keyType = 'string';    // isinya berupa huruf/string
+    protected $primaryKey = 'id_menu';
 
-    protected $guarded = [];
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id_menu',
+        'nama_menu',
+        'harga',
+        'kategori',
+        'gambar',
+        'deskripsi',
+    ];
 }
-//

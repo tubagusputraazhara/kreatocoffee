@@ -14,8 +14,7 @@ return new class extends Migration
 
             // FOREIGN KEY
             $table->string('id_pelanggan'); // karena pelanggan.id = string
-            $table->unsignedBigInteger('id_meja'); // karena meja.id = bigint
-
+            $table->string('id_meja')->nullable(); // Menjadi kolom biasa, tidak nge-link ke tabel mana pun
             $table->string('nama_pesanan');
             $table->string('nama_pelanggan');
             $table->decimal('harga_satuan', 12, 2);
