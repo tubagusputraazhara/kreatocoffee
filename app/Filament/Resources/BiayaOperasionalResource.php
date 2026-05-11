@@ -2,19 +2,23 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Exports\BiayaOperasionalExporter;
 use App\Filament\Resources\BiayaOperasionalResource\Pages;
 use App\Models\BiayaOperasional;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ExportBulkAction;
+use Filament\Tables\Actions\Action;
 
 class BiayaOperasionalResource extends Resource
 {
     protected static ?string $model = BiayaOperasional::class;
 
-    // Ikon uang di sidebar admin
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
     protected static ?string $navigationGroup = 'Transaksi';
 
@@ -22,14 +26,14 @@ class BiayaOperasionalResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Input Biaya Operasional')
-                    ->description('Catat pengeluaran harian KreatoCoffee tanpa relasi COA.')
+                Forms\Components\Section::make('Biaya Operasional')
+                    ->description('')
                     ->schema([
                         Forms\Components\DatePicker::make('tgl_biaya')
                             ->label('Tanggal Transaksi')
                             ->default(now())
                             ->required(),
-                        
+
                         Forms\Components\TextInput::make('nama_biaya')
                             ->label('Keterangan Biaya')
                             ->placeholder('Contoh: Biaya Listrik atau Pembelian Bahan Baku')
@@ -73,7 +77,7 @@ class BiayaOperasionalResource extends Resource
                     ->label('Keterangan Biaya')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('karyawan.nama_karyawan')
+                Tables\Columns\TextColumn::make('karyawan.nama')
                     ->label('PIC'),
 
                 Tables\Columns\TextColumn::make('jumlah_biaya')
@@ -85,6 +89,25 @@ class BiayaOperasionalResource extends Resource
                     ->label('Bukti'),
             ])
             ->filters([])
+            ->headerActions([
+                // tombol export csv dan excel
+                ExportAction::make()->exporter(BiayaOperasionalExporter::class)->color('success'),
+                // tombol unduh PDF
+                Action::make('downloadPdf')
+                    ->label('Unduh PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('danger')
+                    ->action(function () {
+                        $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
+                        $pdf = Pdf::loadView('pdf.biaya-operasional', [
+                            'biayaOperasionals' => $biayaOperasionals
+                        ]);
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            'daftar-biaya-operasional.pdf'
+                        );
+                    })
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -93,6 +116,8 @@ class BiayaOperasionalResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+                // tambahan export excel bulk
+                ExportBulkAction::make()->exporter(BiayaOperasionalExporter::class)
             ]);
     }
 
