@@ -29,6 +29,15 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\Grid;
 
+// tambahan untuk karyawan exporter
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ExportBulkAction;
+use App\Filament\Exports\KaryawanExporter;
+
+// tambahan untuk tombol unduh pdf
+use Filament\Tables\Actions\Action;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class KaryawanResource extends Resource
 {
     protected static ?string $model = Karyawan::class;
@@ -41,18 +50,16 @@ class KaryawanResource extends Resource
     {
         return $form
             ->schema([
-                    // Id Menu
                 TextInput::make('id_Karyawan')
-                ->label('ID Karyawan')
-                ->default(function () {
-                $count = \App\Models\Karyawan::count();
-                $nextNumber = $count + 1; //Menentukan nomor urut berikutnya
-                return 'KYN' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT); 
-        })
-
-                ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
-                ->required() // Wajib untuk diisi
-                ->unique(ignoreRecord: true),
+                    ->label('ID Karyawan')
+                    ->default(function () {
+                        $count = \App\Models\Karyawan::count();
+                        $nextNumber = $count + 1;
+                        return 'KYN' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
+                    })
+                    ->readOnly()
+                    ->required()
+                    ->unique(ignoreRecord: true),
 
                 TextInput::make('nama')
                     ->label('Nama')
@@ -84,7 +91,7 @@ class KaryawanResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id_karyawan')      
+                TextColumn::make('id_karyawan')
                     ->label('ID Karyawan')
                     ->searchable()
                     ->sortable(),
@@ -115,10 +122,36 @@ class KaryawanResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
+
+            // tombol header tambahan
+            ->headerActions([
+                // tombol export csv dan excel
+                ExportAction::make()->exporter(KaryawanExporter::class)->color('success'),
+
+                // tombol unduh PDF
+                Action::make('downloadPdf')
+                    ->label('Unduh PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->action(function () {
+                        $karyawans = Karyawan::all();
+
+                        $pdf = Pdf::loadView('pdf.karyawan', ['karyawans' => $karyawans]);
+
+                        return response()->streamDownload(
+                            fn () => print($pdf->output()),
+                            'daftar-karyawan.pdf'
+                        );
+                    })
+            ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+
+                // tambahan export excel bulk
+                ExportBulkAction::make()->exporter(KaryawanExporter::class)
             ]);
     }
 
