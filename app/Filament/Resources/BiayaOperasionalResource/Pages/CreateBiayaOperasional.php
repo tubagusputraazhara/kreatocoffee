@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateBiayaOperasional extends CreateRecord
 {
     protected static string $resource = BiayaOperasionalResource::class;
+
+    protected function afterCreate(): void
+    {
+    JurnalService::jurnalOperasional($this->record);
+    }
 }
