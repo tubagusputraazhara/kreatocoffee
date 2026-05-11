@@ -16,4 +16,4 @@ class Pemesanan extends Model
 
     // Guarded kosong berarti semua kolom bisa diisi (termasuk id_meja)
     protected $guarded = []; 
-}
+}//

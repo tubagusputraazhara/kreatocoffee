@@ -90,4 +90,4 @@ class MenuResource extends Resource
             'edit' => Pages\EditMenu::route('/{record}/edit'),
         ];
     }
-}
+}//
