@@ -51,11 +51,17 @@ class PenggajianResource extends Resource
                     ->schema([
                         Grid::make(2)->schema([
                             TextInput::make('id_penggajian')
-                                ->label('ID Penggajian')
-                                ->required()
-                                ->unique(ignoreRecord: true)
-                                ->maxLength(50)
-                                ->placeholder('Contoh: GJI001'),
+                            ->label('ID Penggajian')
+                            ->default(function () {
+                            $count = \App\Models\Penggajian::count();
+                            $nextNumber = $count + 1; //Menentukan nomor urut berikutnya
+                            return 'GJI' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT); 
+        })
+
+                ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
+                ->required() // Wajib untuk diisi
+                ->unique(ignoreRecord: true),
+
 
                             Select::make('id_karyawan')
                                 ->label('Karyawan')

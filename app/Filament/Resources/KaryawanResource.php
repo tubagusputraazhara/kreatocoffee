@@ -41,12 +41,18 @@ class KaryawanResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('id_karyawan')        
-                    ->label('ID Karyawan')
-                    ->required()
-                    ->unique(ignoreRecord: true)      
-                    ->maxLength(50)
-                    ->placeholder('Contoh: KYN001'),
+                    // Id Menu
+                TextInput::make('id_Karyawan')
+                ->label('ID Karyawan')
+                ->default(function () {
+                $count = \App\Models\Karyawan::count();
+                $nextNumber = $count + 1; //Menentukan nomor urut berikutnya
+                return 'KYN' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT); 
+        })
+
+                ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
+                ->required() // Wajib untuk diisi
+                ->unique(ignoreRecord: true),
 
                 TextInput::make('nama')
                     ->label('Nama')
