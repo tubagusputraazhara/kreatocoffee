@@ -10,80 +10,46 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-// Komponen Input Form
+// Import Komponen
+use App\Filament\Exports\MenuExporter;
+use Filament\Tables\Actions\ExportBulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Toggle;
-
-// Komponen Kolom Tabel
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
-use Filament\Tables\Columns\IconColumn;
 
 class MenuResource extends Resource
 {
     protected static ?string $model = Menu::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list'; //produk
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationGroup = 'Master Data'; //bagian ini
+    protected static ?string $navigationGroup = 'Master Data';
     
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // Id Menu
                 TextInput::make('id_menu')
-                ->label('ID Menu')
-                ->default(function () {
-                $count = \App\Models\Menu::count(); //Menghitung jumlah data di tabel menu
-                $nextNumber = $count + 1; //Menentukan nomor urut berikutnya
-                return 'M' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT); //Menggabungkan huruf 'M' dengan angka yang diformat 3 digit (001)
-        })
-                ->readOnly() // Membuat kotak input tidak bisa diedit manual oleh user
-                ->required() // Wajib untuk diisi
-                ->unique(ignoreRecord: true), // Unique= tidak boleh sama, dan data sudah otomatis
-             //   
-                // Nama Menu
-                TextInput::make('nama_menu')
-                    ->label('Nama Menu')
-                    ->required(),
+                    ->label('ID Menu')
+                    ->default(function () {
+                        $count = \App\Models\Menu::count();
+                        $nextNumber = $count + 1;
+                        return 'M' . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+                    })
+                    ->readOnly()
+                    ->required()
+                    ->unique(ignoreRecord: true),
 
-                // Harga
-                TextInput::make('harga')
-                    ->label('Harga') //formatStateUsing(fn (string $state): string => 'Rp ' . number_format($state, 0, ',', '.')),
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->required(),
-
-                // Kategori (Makanan/Minuman)
+                TextInput::make('nama_menu')->required(),
+                TextInput::make('harga')->numeric()->prefix('Rp')->required(),
                 Select::make('kategori')
-                    ->label('Kategori')
-                    ->options([
-                        'Makanan' => 'Makanan',
-                        'Minuman' => 'Minuman',
-                    ])
+                    ->options(['Makanan' => 'Makanan', 'Minuman' => 'Minuman'])
                     ->required(),
-
-                // Gambar
-                FileUpload::make('gambar')
-                    ->label('Foto Produk')
-                    ->image()
-                    ->directory('menu-images')
-                    ->required(),
-
-                // Deskripsi
-                Textarea::make('deskripsi')
-                    ->label('Deskripsi Menu')
-                    ->required(),
-
-                // Status Menu
-                //Toggle::make('is_admin')
-                //    ->label('Tersedia')
-                //    ->default(true)
-                //    ->required(),
+                FileUpload::make('gambar')->directory('menu-images')->image()->required(),
+                Textarea::make('deskripsi')->label('Deskripsi Menu')->required(),
             ]);
     }
 
@@ -91,47 +57,18 @@ class MenuResource extends Resource
     {
         return $table
             ->columns([
-                // Menampilkan ID Menu
-                //TextColumn::make('id')
-                    //->label('ID Menu')
-                    //->sortable(),
-
-                TextColumn::make('id_menu')
-                ->label('ID Menu')
-                ->sortable(),
-
-                // Menampilkan Nama Menu
-                TextColumn::make('nama_menu')
-                    ->label('Nama Menu')
-                    ->searchable(),
-
-                // Menampilkan Harga
-                TextColumn::make('harga')
-                    ->label('Harga') //prefix('Rp')
-                    ->money('idr'), //, locale: 'id'
-
-                // Menampilkan Kategori
-                TextColumn::make('kategori')
-                    ->label('Kategori'),
-
-                // Menampilkan Gambar
-                ImageColumn::make('gambar')
-                    ->label('Gambar')
-                    ->size(50),
-
-                // Menampilkan Deskripsi (Limit karakter agar rapi)
-                TextColumn::make('deskripsi')
-                    ->label('Deskripsi')
-                    ->limit(50),
-
-                // Menampilkan Status Tersedia (is_admin)
-                //IconColumn::make('is_admin')
-                   // ->label('Status Tersedia')
-                    //->boolean(),
+                TextColumn::make('id_menu')->label('ID Menu')->sortable(),
+                TextColumn::make('nama_menu')->label('Nama Menu')->searchable(),
+                TextColumn::make('harga')->label('Harga')->money('idr'),
+                TextColumn::make('kategori')->label('Kategori'),
+                ImageColumn::make('gambar')->label('Gambar')->size(50),
+                TextColumn::make('deskripsi')->label('Deskripsi')->limit(50),
             ])
-            ->filters([
-                //
+            // INI YANG DITAMBAHKAN: Tombol New Menu muncul di area tabel (posisi bawah)
+            ->headerActions([
+                Tables\Actions\CreateAction::make()->label('New Menu'),
             ])
+            ->filters([])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -141,6 +78,7 @@ class MenuResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+                ExportBulkAction::make()->exporter(MenuExporter::class)
             ]);
     }
 
