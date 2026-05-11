@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\JurnalUmum;
 use App\Models\DetailJurnalUmum;
+use App\Models\Coa;
 
 class JurnalService
 {
@@ -16,6 +17,23 @@ class JurnalService
     public static function generateNomorJurnal()
     {
         return 'JU-' . now()->format('YmdHis');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HELPER — AMBIL ID COA BY KODE AKUN
+    |--------------------------------------------------------------------------
+    */
+
+    private static function coa($kode_akun)
+    {
+        $coa = Coa::where('kode_akun', $kode_akun)->first();
+
+        if (!$coa) {
+            throw new \Exception("COA dengan kode '{$kode_akun}' tidak ditemukan. Pastikan seeder COA sudah dijalankan.");
+        }
+
+        return $coa->id_coa;
     }
 
     /*
@@ -33,7 +51,6 @@ class JurnalService
         ]);
 
         foreach ($details as $detail) {
-
             DetailJurnalUmum::create([
                 'id_jurnal' => $jurnal->id_jurnal,
                 'id_coa'    => $detail['id_coa'],
@@ -54,27 +71,21 @@ class JurnalService
     public static function jurnalPenjualan($pemesanan)
     {
         self::createJurnal(
-
             now(),
-
             'Penjualan #' . $pemesanan->kode_pemesanan,
-
             [
-
                 // DEBIT KAS
                 [
-                    'id_coa' => 1,
+                    'id_coa' => self::coa('1-001'),
                     'debit'  => $pemesanan->total_harga,
                     'kredit' => 0,
                 ],
-
                 // KREDIT PENDAPATAN PENJUALAN
                 [
-                    'id_coa' => 13,
+                    'id_coa' => self::coa('4-001'),
                     'debit'  => 0,
                     'kredit' => $pemesanan->total_harga,
                 ],
-
             ]
         );
     }
@@ -88,27 +99,21 @@ class JurnalService
     public static function jurnalPembelian($pembelian)
     {
         self::createJurnal(
-
             now(),
-
             'Pembelian Bahan Baku #' . $pembelian->kode_pembelian,
-
             [
-
                 // DEBIT PERSEDIAAN BAHAN BAKU
                 [
-                    'id_coa' => 11,
+                    'id_coa' => self::coa('1-004'),
                     'debit'  => $pembelian->total_harga,
                     'kredit' => 0,
                 ],
-
                 // KREDIT KAS
                 [
-                    'id_coa' => 1,
+                    'id_coa' => self::coa('1-001'),
                     'debit'  => 0,
                     'kredit' => $pembelian->total_harga,
                 ],
-
             ]
         );
     }
@@ -122,27 +127,21 @@ class JurnalService
     public static function jurnalPenggajian($penggajian)
     {
         self::createJurnal(
-
             now(),
-
             'Penggajian #' . $penggajian->kode_penggajian,
-
             [
-
                 // DEBIT BEBAN GAJI
                 [
-                    'id_coa' => 14,
+                    'id_coa' => self::coa('5-001'),
                     'debit'  => $penggajian->total_gaji,
                     'kredit' => 0,
                 ],
-
                 // KREDIT KAS
                 [
-                    'id_coa' => 1,
+                    'id_coa' => self::coa('1-001'),
                     'debit'  => 0,
                     'kredit' => $penggajian->total_gaji,
                 ],
-
             ]
         );
     }
@@ -156,27 +155,21 @@ class JurnalService
     public static function jurnalOperasional($operasional)
     {
         self::createJurnal(
-
             now(),
-
             'Biaya Operasional #' . $operasional->kode_operasional,
-
             [
-
                 // DEBIT BEBAN OPERASIONAL
                 [
-                    'id_coa' => 15,
+                    'id_coa' => self::coa('5-002'),
                     'debit'  => $operasional->total_biaya,
                     'kredit' => 0,
                 ],
-
                 // KREDIT KAS
                 [
-                    'id_coa' => 1,
+                    'id_coa' => self::coa('1-001'),
                     'debit'  => 0,
                     'kredit' => $operasional->total_biaya,
                 ],
-
             ]
         );
     }

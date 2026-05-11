@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
+
 class pembelianBahanBaku extends Model
 {
     use HasFactory;
 
-    protected $table = 'pembelianBahanBaku'; // Nama tabel sudah benar[cite: 1]
+    protected $table = 'pembelian_bahan_bakus'; // Nama tabel sudah benar[cite: 1]
 
     protected $guarded = [];
 
@@ -24,7 +25,7 @@ class pembelianBahanBaku extends Model
     {
         // Query untuk mengambil no_faktur terakhir
         $sql = "SELECT IFNULL(MAX(no_faktur), 'PB-0000000') as no_faktur 
-                FROM pembelianBahanBaku ";
+                FROM pembelian_bahan_bakus ";
         $kodefaktur = DB::select($sql);
 
         $kd = $kodefaktur[0]->no_faktur; // Mengambil hasil pertama langsung tanpa foreach

@@ -11,9 +11,15 @@ class Pemesanan extends Model
 
     protected $table = 'pemesanan';
     protected $primaryKey = 'id_pemesanan';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    protected $guarded = [];
 
-    // Guarded kosong berarti semua kolom bisa diisi (termasuk id_meja)
-    protected $guarded = []; 
-}//
+    public static function generateKode()
+    {
+        return 'ORD-' . now()->format('YmdHis');
+    }
+
+    public function details()
+    {
+        return $this->hasMany(DetailPemesanan::class, 'id_pemesanan');
+    }
+}
