@@ -99,7 +99,7 @@ class BiayaOperasionalResource extends Resource
                     ->color('danger')
                     ->action(function () {
                         $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
-                        $pdf = Pdf::loadView('pdf.biaya-operasional', [
+                        $pdf = Pdf::loadView('pdf.BiayaOperasional', [
                             'biayaOperasionals' => $biayaOperasionals
                         ]);
                         return response()->streamDownload(
