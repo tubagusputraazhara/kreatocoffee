@@ -6,6 +6,7 @@ use App\Models\JurnalUmum;
 use App\Models\DetailJurnalUmum;
 use App\Models\Coa;
 
+
 class JurnalService
 {
     public static function generateNomorJurnal()
