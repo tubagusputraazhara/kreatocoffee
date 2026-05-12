@@ -88,10 +88,9 @@ class PemesananResource extends Resource
                     ->required()
                     ->reactive()
                     ->afterStateUpdated(function (callable $set, callable $get) {
-
                         $set(
                             'total_harga',
-                            (float)$get('harga_satuan') * (int)$get('jumlah')
+                            (float) $get('harga_satuan') * (int) $get('jumlah')
                         );
                     }),
 
@@ -115,40 +114,70 @@ class PemesananResource extends Resource
                     ->label('ID')
                     ->sortable(),
 
-                TextColumn::make('id_meja')
+                // Gabungan: fallback ke id_meja atau no_meja
+                TextColumn::make('no_meja')
                     ->label('No Meja')
-                    ->formatStateUsing(fn ($state) => "Meja " . $state)
+                    ->getStateUsing(fn ($record) => $record->id_meja
+                        ? 'Meja ' . $record->id_meja
+                        : ($record->no_meja ?? '-'))
                     ->sortable(),
 
-                TextColumn::make('nama_pelanggan')
+                // Gabungan: fallback ke nama_pelanggan atau nama_pemesan
+                TextColumn::make('nama_pemesan')
                     ->label('Pelanggan')
+                    ->getStateUsing(fn ($record) => $record->nama_pelanggan
+                        ?? $record->nama_pemesan
+                        ?? '-')
                     ->searchable(),
 
-                TextColumn::make('nama_pesanan')
-                    ->label('Menu'),
-
-                TextColumn::make('jumlah')
-                    ->label('Qty'),
+                // Gabungan: tampilkan detail menu jika ada, fallback ke nama_pesanan
+                TextColumn::make('details_summary')
+                    ->label('Menu')
+                    ->getStateUsing(function ($record) {
+                        if ($record->details && $record->details->count() > 0) {
+                            return $record->details
+                                ->map(fn ($d) => $d->nama_menu . ' x' . $d->qty)
+                                ->implode(', ');
+                        }
+                        return $record->nama_pesanan ?? '-';
+                    }),
 
                 TextColumn::make('total_harga')
                     ->label('Total')
                     ->money('idr'),
+
+                TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'pending' => 'warning',
+                        'selesai' => 'success',
+                        'batal'   => 'danger',
+                        default   => 'gray',
+                    }),
+
+                TextColumn::make('sumber')
+                    ->label('Sumber')
+                    ->badge()
+                    ->color(fn ($state) => $state === 'customer' ? 'info' : 'gray'),
 
                 TextColumn::make('created_at')
                     ->label('Waktu')
                     ->dateTime(),
             ])
 
-            //supaya menuju ke kasir
             ->headerActions([
-
+                // Dari versi temanmu: tombol shortcut ke halaman kasir
                 Tables\Actions\Action::make('kasir')
-                    ->label('New Pemesanan')
-                    ->icon('heroicon-o-shopping-cart')
+                    ->label('Buka Kasir')
+                    ->icon('heroicon-o-calculator')
                     ->url(url('/kasir')),
 
+                // Dari versi kamu: tombol buat pemesanan baru standar Filament
+                Tables\Actions\CreateAction::make()
+                    ->label('New Pemesanan'),
             ])
-        
+
             ->filters([])
 
             ->actions([
@@ -166,9 +195,9 @@ class PemesananResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListPemesanans::route('/'),
+            'index'  => Pages\ListPemesanans::route('/'),
             'create' => Pages\CreatePemesanan::route('/create'),
-            'edit' => Pages\EditPemesanan::route('/{record}/edit'),
+            'edit'   => Pages\EditPemesanan::route('/{record}/edit'),
         ];
     }
 }

@@ -18,7 +18,6 @@ class ListPemesanans extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // Export dan PDF di sini agar posisinya paling atas (Header Halaman)
             ExportAction::make()
                 ->label('Export Pemesanan')
                 ->exporter(PemesananExporter::class)
@@ -29,13 +28,18 @@ class ListPemesanans extends ListRecords
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('danger')
                 ->action(function () {
-                    $pemesanans = Pemesanan::all();
-                    $pdf = Pdf::loadView('pdf.pemesanan', ['pemesanans' => $pemesanans]);
+                    $pemesanans = Pemesanan::with('details') // ← tambah with details
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+
+                    $pdf = Pdf::loadView('pdf.pemesanan', ['pemesanans' => $pemesanans])
+                        ->setPaper('a4', 'landscape'); // ← landscape biar lega
+
                     return response()->streamDownload(
                         fn () => print($pdf->output()),
-                        'daftar-pemesanan.pdf'
+                        'Laporan-Pemesanan-' . now()->format('Y-m-d') . '.pdf'
                     );
                 }),
         ];
     }
-}//
+}

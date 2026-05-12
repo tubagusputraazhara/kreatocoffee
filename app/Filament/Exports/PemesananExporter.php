@@ -14,14 +14,16 @@ class PemesananExporter extends Exporter
     public static function getColumns(): array
     {
         return [
-            ExportColumn::make('id_pemesanan')->label('ID Pemesanan'),
-            ExportColumn::make('id_pelanggan')->label('ID Pelanggan'),
-            ExportColumn::make('nama_pelanggan')->label('Nama Pelanggan'),
-            ExportColumn::make('id_meja')->label('No Meja'),
-            ExportColumn::make('nama_pesanan')->label('Menu dipesan'),
-            ExportColumn::make('harga_satuan')->label('Harga Satuan'),
-            ExportColumn::make('jumlah')->label('Qty'),
-            ExportColumn::make('total_harga')->label('Total Harga'),
+            ExportColumn::make('kode_pemesanan')->label('Kode Pemesanan'),
+            ExportColumn::make('nama_pemesan')->label('Nama Pemesan'),
+            ExportColumn::make('no_meja')->label('No Meja'),
+            ExportColumn::make('no_wa')->label('No WhatsApp'),
+            ExportColumn::make('email')->label('Email'),
+            ExportColumn::make('sumber')->label('Sumber'),
+            ExportColumn::make('total_harga')
+                ->label('Total Harga')
+                ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.')),
+            ExportColumn::make('status')->label('Status'),
             ExportColumn::make('catatan')->label('Catatan'),
             ExportColumn::make('created_at')->label('Waktu Pesan'),
         ];
@@ -29,7 +31,7 @@ class PemesananExporter extends Exporter
 
     public static function getCompletedNotificationBody(Export $export): string
     {
-        $body = 'Export data transaksi pemesanan selesai. ' . number_format($export->successful_rows) . ' baris berhasil diekspor.';
+        $body = 'Export data pemesanan selesai. ' . number_format($export->successful_rows) . ' baris berhasil diekspor.';
 
         if ($failedRowsCount = $export->getFailedRowsCount()) {
             $body .= ' ' . number_format($failedRowsCount) . ' baris gagal diekspor.';
@@ -38,4 +40,3 @@ class PemesananExporter extends Exporter
         return $body;
     }
 }
-//
