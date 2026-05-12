@@ -42,13 +42,20 @@ class PemesananResource extends Resource
                     ->searchable()
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $dataPelanggan = pelanggan::find($state); 
-                        if ($dataPelanggan) { $set('nama_pelanggan', $dataPelanggan->nama_pelanggan); }
-                    })->required(),
+                        $dataPelanggan = pelanggan::find($state);
+
+                        if ($dataPelanggan) {
+                            $set('nama_pelanggan', $dataPelanggan->nama_pelanggan);
+                        }
+                    })
+                    ->required(),
 
                 Select::make('id_meja')
                     ->label('No Meja')
-                    ->options(collect(range(1, 20))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i]))
+                    ->options(
+                        collect(range(1, 20))
+                            ->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])
+                    )
                     ->required(),
 
                 Select::make('nama_pesanan')
@@ -56,18 +63,47 @@ class PemesananResource extends Resource
                     ->options(menu::all()->pluck('nama_menu', 'nama_menu'))
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
-                        $item = menu::where('nama_menu', $state)->first();
-                        if ($item) { $set('harga_satuan', $item->harga); }
-                    })->required(),
 
-                TextInput::make('nama_pelanggan')->label('Nama Pelanggan')->readOnly(),
-                TextInput::make('harga_satuan')->label('Harga Satuan')->numeric()->prefix('Rp')->readOnly(),
-                TextInput::make('jumlah')->label('Jumlah')->numeric()->required()->reactive()
+                        $item = menu::where('nama_menu', $state)->first();
+
+                        if ($item) {
+                            $set('harga_satuan', $item->harga);
+                        }
+                    })
+                    ->required(),
+
+                TextInput::make('nama_pelanggan')
+                    ->label('Nama Pelanggan')
+                    ->readOnly(),
+
+                TextInput::make('harga_satuan')
+                    ->label('Harga Satuan')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->readOnly(),
+
+                TextInput::make('jumlah')
+                    ->label('Jumlah')
+                    ->numeric()
+                    ->required()
+                    ->reactive()
                     ->afterStateUpdated(function (callable $set, callable $get) {
-                        $set('total_harga', (float)$get('harga_satuan') * (int)$get('jumlah'));
+
+                        $set(
+                            'total_harga',
+                            (float)$get('harga_satuan') * (int)$get('jumlah')
+                        );
                     }),
-                TextInput::make('total_harga')->label('Total Harga')->numeric()->prefix('Rp')->readOnly(),
-                Textarea::make('catatan')->label('Catatan')->columnSpanFull(),
+
+                TextInput::make('total_harga')
+                    ->label('Total Harga')
+                    ->numeric()
+                    ->prefix('Rp')
+                    ->readOnly(),
+
+                Textarea::make('catatan')
+                    ->label('Catatan')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -75,23 +111,51 @@ class PemesananResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('id_pemesanan')->label('ID')->sortable(),
-                TextColumn::make('id_meja')->label('No Meja')->formatStateUsing(fn ($state) => "Meja " . $state)->sortable(),
-                TextColumn::make('nama_pelanggan')->label('Pelanggan')->searchable(),
-                TextColumn::make('nama_pesanan')->label('Menu'),
-                TextColumn::make('jumlah')->label('Qty'),
-                TextColumn::make('total_harga')->label('Total')->money('idr'),
-                TextColumn::make('created_at')->label('Waktu')->dateTime(),
+                TextColumn::make('id_pemesanan')
+                    ->label('ID')
+                    ->sortable(),
+
+                TextColumn::make('id_meja')
+                    ->label('No Meja')
+                    ->formatStateUsing(fn ($state) => "Meja " . $state)
+                    ->sortable(),
+
+                TextColumn::make('nama_pelanggan')
+                    ->label('Pelanggan')
+                    ->searchable(),
+
+                TextColumn::make('nama_pesanan')
+                    ->label('Menu'),
+
+                TextColumn::make('jumlah')
+                    ->label('Qty'),
+
+                TextColumn::make('total_harga')
+                    ->label('Total')
+                    ->money('idr'),
+
+                TextColumn::make('created_at')
+                    ->label('Waktu')
+                    ->dateTime(),
             ])
-            // INI YANG DITAMBAHKAN: Tombol New muncul di posisi bawah (atas tabel)
+
+            //supaya menuju ke kasir
             ->headerActions([
-                Tables\Actions\CreateAction::make()->label('New Pemesanan'),
+
+                Tables\Actions\Action::make('kasir')
+                    ->label('New Pemesanan')
+                    ->icon('heroicon-o-shopping-cart')
+                    ->url(url('/kasir')),
+
             ])
+        
             ->filters([])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
@@ -107,4 +171,4 @@ class PemesananResource extends Resource
             'edit' => Pages\EditPemesanan::route('/{record}/edit'),
         ];
     }
-}//
+}
