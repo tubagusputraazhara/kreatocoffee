@@ -41,3 +41,6 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
 });
 
+Route::get('/jurnal/export/pdf', [App\Http\Controllers\JurnalExportController::class, 'exportPdf'])
+    ->name('jurnal.export.pdf')
+    ->middleware('auth');

@@ -8,22 +8,10 @@ use App\Models\Coa;
 
 class JurnalService
 {
-    /*
-    |--------------------------------------------------------------------------
-    | GENERATE NOMOR JURNAL
-    |--------------------------------------------------------------------------
-    */
-
     public static function generateNomorJurnal()
     {
         return 'JU-' . now()->format('YmdHis');
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | HELPER — AMBIL ID COA BY KODE AKUN
-    |--------------------------------------------------------------------------
-    */
 
     private static function coa($kode_akun)
     {
@@ -36,18 +24,13 @@ class JurnalService
         return $coa->id_coa;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE JURNAL UMUM
-    |--------------------------------------------------------------------------
-    */
-
-    public static function createJurnal($tanggal, $keterangan, $details = [])
+    public static function createJurnal($tanggal, $keterangan, $details = [], $ref = null)
     {
         $jurnal = JurnalUmum::create([
             'nomor_jurnal'   => self::generateNomorJurnal(),
             'tanggal_jurnal' => $tanggal,
             'keterangan'     => $keterangan,
+            'ref'            => $ref,
         ]);
 
         foreach ($details as $detail) {
@@ -62,115 +45,55 @@ class JurnalService
         return $jurnal;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | JURNAL PENJUALAN / PEMESANAN
-    |--------------------------------------------------------------------------
-    */
-
     public static function jurnalPenjualan($pemesanan)
     {
         self::createJurnal(
             now(),
             'Penjualan #' . $pemesanan->kode_pemesanan,
             [
-                // DEBIT KAS
-                [
-                    'id_coa' => self::coa('1-001'),
-                    'debit'  => $pemesanan->total_harga,
-                    'kredit' => 0,
-                ],
-                // KREDIT PENDAPATAN PENJUALAN
-                [
-                    'id_coa' => self::coa('4-001'),
-                    'debit'  => 0,
-                    'kredit' => $pemesanan->total_harga,
-                ],
-            ]
+                ['id_coa' => self::coa('1-001'), 'debit' => $pemesanan->total_harga, 'kredit' => 0],
+                ['id_coa' => self::coa('4-001'), 'debit' => 0, 'kredit' => $pemesanan->total_harga],
+            ],
+            $pemesanan->kode_pemesanan
         );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | JURNAL PEMBELIAN BAHAN BAKU
-    |--------------------------------------------------------------------------
-    */
 
     public static function jurnalPembelian($pembelian)
     {
         self::createJurnal(
             now(),
-            'Pembelian Bahan Baku #' . $pembelian->kode_pembelian,
+            'Pembelian Bahan Baku #' . $pembelian->no_faktur, // ← fix
             [
-                // DEBIT PERSEDIAAN BAHAN BAKU
-                [
-                    'id_coa' => self::coa('1-004'),
-                    'debit'  => $pembelian->total_harga,
-                    'kredit' => 0,
-                ],
-                // KREDIT KAS
-                [
-                    'id_coa' => self::coa('1-001'),
-                    'debit'  => 0,
-                    'kredit' => $pembelian->total_harga,
-                ],
-            ]
+                ['id_coa' => self::coa('1-004'), 'debit' => $pembelian->total_harga, 'kredit' => 0],
+                ['id_coa' => self::coa('1-001'), 'debit' => 0, 'kredit' => $pembelian->total_harga],
+            ],
+            $pembelian->no_faktur // ← fix
         );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | JURNAL PENGGAJIAN
-    |--------------------------------------------------------------------------
-    */
 
     public static function jurnalPenggajian($penggajian)
     {
         self::createJurnal(
             now(),
-            'Penggajian #' . $penggajian->kode_penggajian,
+            'Penggajian ' . $penggajian->id_penggajian, // ← fix
             [
-                // DEBIT BEBAN GAJI
-                [
-                    'id_coa' => self::coa('5-001'),
-                    'debit'  => $penggajian->total_gaji,
-                    'kredit' => 0,
-                ],
-                // KREDIT KAS
-                [
-                    'id_coa' => self::coa('1-001'),
-                    'debit'  => 0,
-                    'kredit' => $penggajian->total_gaji,
-                ],
-            ]
+                ['id_coa' => self::coa('5-001'), 'debit' => $penggajian->gaji_bersih, 'kredit' => 0], // ← fix
+                ['id_coa' => self::coa('1-001'), 'debit' => 0, 'kredit' => $penggajian->gaji_bersih], // ← fix
+            ],
+            $penggajian->id_penggajian // ← fix
         );
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | JURNAL BIAYA OPERASIONAL
-    |--------------------------------------------------------------------------
-    */
 
     public static function jurnalOperasional($operasional)
     {
         self::createJurnal(
             now(),
-            'Biaya Operasional #' . $operasional->kode_operasional,
+            'Biaya Operasional - ' . $operasional->nama_biaya, // ← fix
             [
-                // DEBIT BEBAN OPERASIONAL
-                [
-                    'id_coa' => self::coa('5-002'),
-                    'debit'  => $operasional->total_biaya,
-                    'kredit' => 0,
-                ],
-                // KREDIT KAS
-                [
-                    'id_coa' => self::coa('1-001'),
-                    'debit'  => 0,
-                    'kredit' => $operasional->total_biaya,
-                ],
-            ]
+                ['id_coa' => self::coa('5-002'), 'debit' => $operasional->jumlah_biaya, 'kredit' => 0], // ← fix
+                ['id_coa' => self::coa('1-001'), 'debit' => 0, 'kredit' => $operasional->jumlah_biaya], // ← fix
+            ],
+            $operasional->nama_biaya // ← fix
         );
     }
 }
