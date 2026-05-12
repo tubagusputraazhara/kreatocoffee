@@ -7,7 +7,7 @@
         body { font-family: Arial, sans-serif; font-size: 12px; }
         h2 { text-align: center; }
         table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th { background-color: #4f46e5; color: white; padding: 8px; text-align: left; }
+        th { background-color: #B91C1C; color: white; padding: 8px; text-align: left; }
         td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; }
         tr:nth-child(even) { background-color: #f3f4f6; }
         .footer { margin-top: 20px; font-size: 11px; color: #6b7280; text-align: right; }
