@@ -7,21 +7,15 @@ use App\Http\Controllers\PesananController; // Pastikan Controller ini sudah dib
 // CUSTOMER QR ORDERING
 // =========================
 Route::prefix('order')->name('order.')->group(function () {
-
     Route::get('/', [OrderingController::class, 'index'])->name('index');
-
     Route::post('/store-info', [OrderingController::class, 'storeInfo'])->name('storeInfo');
-
     Route::get('/menu', [OrderingController::class, 'menu'])->name('menu');
-
     Route::post('/add-to-cart', [OrderingController::class, 'addToCart'])->name('addToCart');
-
     Route::post('/remove-from-cart', [OrderingController::class, 'removeFromCart'])->name('removeFromCart');
 
     Route::post('/update-cart', [OrderingController::class, 'updateCart'])->name('updateCart');
 
     Route::get('/checkout', [OrderingController::class, 'checkout'])->name('checkout');
-
     Route::post('/payment', [OrderingController::class, 'payment'])->name('payment');
 
     Route::post('/update-status', [OrderingController::class, 'updateStatus'])->name('updateStatus');
@@ -34,8 +28,11 @@ Route::prefix('order')->name('order.')->group(function () {
 // KASIR POS
 // =========================
 Route::prefix('kasir')->name('kasir.')->group(function () {
-
     Route::get('/', [KasirController::class, 'index'])->name('index');
+    
+    // Alur Baru: Simpan Pesanan & Redirect ke Detail
+    Route::post('/simpan-pesanan', [PesananController::class, 'simpan'])->name('simpan');
+    Route::get('/detail/{id}', [PesananController::class, 'showDetail'])->name('detail');
 
         
     // Alur Baru: Simpan Pesanan & Redirect ke Detail
@@ -45,13 +42,16 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     // Route lama (opsional jika masih digunakan)
 
     Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
-
     Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
-
     Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
-
     Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
 });
+// =========================
+// MIDTRANS CALLBACK (Optional but Recommended)
+// =========================
+// Untuk menangani perubahan status pembayaran otomatis dari server Midtrans
+Route::post('/midtrans/callback', [PesananController::class, 'callback'])->name('midtrans.callback');
+
 // =========================
 // MIDTRANS CALLBACK (Optional but Recommended)
 // =========================

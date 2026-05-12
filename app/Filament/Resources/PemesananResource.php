@@ -63,6 +63,7 @@ class PemesananResource extends Resource
                     ->options(menu::all()->pluck('nama_menu', 'nama_menu'))
                     ->reactive()
                     ->afterStateUpdated(function ($state, callable $set) {
+
                         $item = menu::where('nama_menu', $state)->first();
 
                         if ($item) {

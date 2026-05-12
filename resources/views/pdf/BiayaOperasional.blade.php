@@ -7,7 +7,7 @@
         body { font-family: Arial, sans-serif; font-size: 12px; }
         h2 { text-align: center; }
         table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th { background-color: #4f46e5; color: white; padding: 8px; text-align: left; }
+        th { background-color: #B91C1C; color: white; padding: 8px; text-align: left; }
         td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; }
         tr:nth-child(even) { background-color: #f3f4f6; }
         .footer { margin-top: 20px; font-size: 11px; color: #6b7280; text-align: right; }
@@ -30,7 +30,7 @@
             <tr>
                 <td>{{ \Carbon\Carbon::parse($item->tgl_biaya)->format('d-m-Y') }}</td>
                 <td>{{ $item->nama_biaya }}</td>
-                <td>{{ $item->karyawan->nama_karyawan ?? '-' }}</td>
+                <td>{{ $item->karyawan->nama ?? '-' }}</td>
                 <td>Rp {{ number_format($item->jumlah_biaya, 0, ',', '.') }}</td>
                 <td>{{ $item->keterangan ?? '-' }}</td>
             </tr>
