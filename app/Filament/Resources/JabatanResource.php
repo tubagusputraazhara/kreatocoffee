@@ -37,6 +37,9 @@ class JabatanResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationLabel = 'Jabatan';
+    protected static ?string $pluralModelLabel = 'Jabatan';
+    protected static ?string $modelLabel = 'Jabatan';
 
     public static function form(Form $form): Form
     {
@@ -45,7 +48,7 @@ class JabatanResource extends Resource
                 TextInput::make('id_jabatan')
                     ->label('ID')
                     ->default(function () {
-                        $count = \App\Models\jabatan::count();
+                        $count = \App\Models\Jabatan::count();
                         $nextNumber = $count + 1;
                         return 'JBN' . str_pad($nextNumber, 2, '0', STR_PAD_LEFT);
                     })

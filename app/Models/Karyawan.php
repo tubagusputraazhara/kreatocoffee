@@ -27,6 +27,13 @@ class Karyawan extends Model
         'nama',
         'jenis_kelamin',
         'tanggal_lahir',
-        'gaji',
+        'jabatan',
+
     ];
+
+    // tambahan: relasi ke master data Jabatan (untuk keperluan dropdown)
+    public function jabatanRelasi()
+    {
+        return $this->belongsTo(Jabatan::class, 'jabatan', 'jabatan');
+    }
 }
