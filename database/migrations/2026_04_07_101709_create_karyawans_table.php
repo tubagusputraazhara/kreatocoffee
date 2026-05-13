@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama'); // Nama
             $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']); // Jenis kelamin
             $table->date('tanggal_lahir'); // Tanggal lahir
-            $table->decimal('gaji', 15, 2)->default(0); // Gaji
+            $table->string('jabatan');
             $table->timestamps();
         });
         
