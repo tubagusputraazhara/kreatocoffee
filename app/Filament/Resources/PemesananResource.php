@@ -19,7 +19,7 @@ use Filament\Tables\Columns\TextColumn;
 class PemesananResource extends Resource
 {
     protected static ?string $model = Pemesanan::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationLabel = 'Pemesanan';
     protected static ?string $navigationGroup = 'Transaksi';
 

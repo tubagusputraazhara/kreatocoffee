@@ -7,19 +7,21 @@ use Illuminate\Support\Str;
 use App\Models\Menu;
 use App\Models\Pemesanan;
 use App\Models\DetailPemesanan;
+use App\Services\JurnalService;
 
 class OrderingController extends Controller
 {
     public function index()
     {
         $daftarMeja = [
-            'Meja 1', 'Meja 2', 'Meja 3', 'Meja 4', 'Meja 5',
-            'Meja 6', 'Meja 7', 'Meja 8', 'Meja 9', 'Meja 10',
+            'Meja 1',  'Meja 2',  'Meja 3',  'Meja 4',  'Meja 5',
+            'Meja 6',  'Meja 7',  'Meja 8',  'Meja 9',  'Meja 10',
             'Meja 11', 'Meja 12', 'Meja 13', 'Meja 14', 'Meja 15',
             'Meja 16', 'Meja 17', 'Meja 18', 'Meja 19', 'Meja 20',
             'Meja 21', 'Meja 22', 'Meja 23', 'Meja 24', 'Meja 25',
             'Meja 26', 'Meja 27', 'Meja 28', 'Meja 29', 'Meja 30',
         ];
+
         return view('ordering.index', compact('daftarMeja'));
     }
 
@@ -162,6 +164,7 @@ class OrderingController extends Controller
             'sumber'         => 'customer',
             'total_harga'    => $total,
             'status'         => 'pending',
+            'jurnal_dibuat'  => false,
             'catatan'        => $catatan,
             'order_id'       => $kodePemesanan,
         ]);
@@ -189,19 +192,17 @@ class OrderingController extends Controller
             'name'     => substr($item['nama_menu'], 0, 50),
         ])->values()->toArray();
 
-        $customerDetails = [
-            'first_name' => session('nama_pemesan'),
-            'phone'      => session('no_wa') ?? '',
-            'email'      => session('email') ?? 'guest@kreatocoffee.com',
-        ];
-
         $params = [
             'transaction_details' => [
                 'order_id'     => $kodePemesanan,
                 'gross_amount' => (int) $total,
             ],
-            'item_details'     => $itemDetails,
-            'customer_details' => $customerDetails,
+            'item_details' => $itemDetails,
+            'customer_details' => [
+                'first_name' => session('nama_pemesan'),
+                'phone'      => session('no_wa') ?? '',
+                'email'      => session('email') ?? 'guest@kreatocoffee.com',
+            ],
         ];
 
         $snapToken = \Midtrans\Snap::getSnapToken($params);
@@ -223,11 +224,19 @@ class OrderingController extends Controller
         $pemesanan = Pemesanan::where('order_id', $orderId)->first();
 
         if ($pemesanan) {
+            $selesai = in_array($status, ['settlement', 'capture']);
+
             $pemesanan->update([
                 'transaction_status' => $status,
                 'payment_type'       => $type,
-                'status'             => in_array($status, ['settlement', 'capture']) ? 'selesai' : 'pending',
+                'status'             => $selesai ? 'selesai' : 'pending',
             ]);
+
+            // Trigger jurnal hanya kalau selesai & belum dibuat
+            if ($selesai && !$pemesanan->jurnal_dibuat) {
+                JurnalService::jurnalPenjualan($pemesanan);
+                $pemesanan->update(['jurnal_dibuat' => true]);
+            }
         }
 
         return response()->json(['success' => true]);
@@ -242,16 +251,26 @@ class OrderingController extends Controller
             \Midtrans\Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
 
             try {
-                $status = \Midtrans\Transaction::status($orderId);
-
+                $status    = \Midtrans\Transaction::status($orderId);
                 $pemesanan = Pemesanan::where('order_id', $orderId)->first();
 
                 if ($pemesanan) {
+                    $selesai = in_array(
+                        $status->transaction_status,
+                        ['settlement', 'capture']
+                    );
+
                     $pemesanan->update([
                         'transaction_status' => $status->transaction_status,
                         'payment_type'       => $status->payment_type,
-                        'status'             => in_array($status->transaction_status, ['settlement', 'capture']) ? 'selesai' : 'pending',
+                        'status'             => $selesai ? 'selesai' : 'pending',
                     ]);
+
+                    // Trigger jurnal hanya kalau selesai & belum dibuat
+                    if ($selesai && !$pemesanan->jurnal_dibuat) {
+                        JurnalService::jurnalPenjualan($pemesanan);
+                        $pemesanan->update(['jurnal_dibuat' => true]);
+                    }
                 }
             } catch (\Exception $e) {
                 // Kalau gagal cek, biarkan pending
@@ -259,6 +278,7 @@ class OrderingController extends Controller
         }
 
         session()->forget(['nama_pemesan', 'no_meja', 'no_wa', 'email', 'order_id']);
+
         return view('ordering.success');
     }
 }

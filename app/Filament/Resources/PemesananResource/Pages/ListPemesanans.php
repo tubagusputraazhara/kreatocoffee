@@ -20,6 +20,7 @@ class ListPemesanans extends ListRecords
         return [
             ExportAction::make()
                 ->label('Export Pemesanan')
+                ->icon('heroicon-o-arrow-up-tray')
                 ->exporter(PemesananExporter::class)
                 ->color('success'),
 
