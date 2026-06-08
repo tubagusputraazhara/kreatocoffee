@@ -65,6 +65,7 @@
             font-family:'Poppins';
             outline:none;
             font-size:14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
 
         .kategori-wrap{
@@ -79,7 +80,7 @@
         }
 
         .kategori-btn{
-            padding:10px 18px;
+            padding:10px 20px;
             border:none;
             border-radius:20px;
             background:#fff;
@@ -87,7 +88,10 @@
             white-space:nowrap;
             font-size:13px;
             font-family:'Poppins';
+            font-weight: 500;
             color:#5C4033;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
 
         .kategori-btn.active{
@@ -106,17 +110,29 @@
             border-radius:20px;
             overflow:hidden;
             box-shadow:0 4px 16px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
+        .menu-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        /* UKURAN GAMBAR SERAGAM & RAPI */
         .menu-img{
-            height:150px;
+            height:160px; 
+            width: 100%;
             background:#F0E3D5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; 
         }
 
         .menu-img img{
             width:100%;
             height:100%;
-            object-fit:cover;
+            object-fit:cover; 
         }
 
         .menu-body{
@@ -128,15 +144,21 @@
             font-weight:600;
             color:#2C1A0E;
             margin-bottom:4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; 
         }
 
         .menu-desc{
             font-size:12px;
             color:#9E8E84;
             line-height:1.5;
-            margin-bottom:10px;
+            margin-bottom:12px;
             height: 36px;
             overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .menu-price{
@@ -156,6 +178,11 @@
             font-family:'Poppins';
             font-weight:600;
             cursor:pointer;
+            transition: background 0.2s ease;
+        }
+
+        .btn-add:hover {
+            background: #A62F24;
         }
 
         /* =======================
@@ -314,6 +341,11 @@
             font-weight:700;
             font-family:'Poppins';
             cursor:pointer;
+            transition: background 0.2s ease;
+        }
+
+        .btn-pay:hover{
+            background: #A62F24;
         }
 
         .empty{
@@ -329,10 +361,8 @@
 
 <div class="wrapper">
 
-    <!-- LEFT -->
     <div class="left">
 
-        <!-- FORM DATA PEMESANAN -->
         <div class="order-form">
             <div class="form-title">Data Pemesanan</div>
             <div class="form-grid">
@@ -370,33 +400,30 @@
             </div>
         </div>
 
-        <!-- HEADER -->
         <div class="header">
             <div>
                 <div class="title">Kasir Kreato Coffee</div>
                 <div class="subtitle">Point of Sales System</div>
             </div>
-            <input type="text" class="search" placeholder="Cari menu...">
+            <input type="text" id="search-input" class="search" placeholder="Cari menu..." onkeyup="filterSearch()">
         </div>
 
-        <!-- KATEGORI -->
         <div class="kategori-wrap">
-            <button class="kategori-btn active">Semua</button>
+            <button class="kategori-btn active" onclick="filterKategori('Semua', this)">Semua</button>
             @foreach($menus->keys() as $kategori)
-                <button class="kategori-btn">{{ $kategori }}</button>
+                <button class="kategori-btn" onclick="filterKategori('{{ $kategori }}', this)">{{ $kategori }}</button>
             @endforeach
         </div>
 
-        <!-- MENU -->
-        <div class="menu-grid">
-            @foreach($menus as $items)
+        <div class="menu-grid" id="menu-grid-container">
+            @foreach($menus as $kategori => $items)
                 @foreach($items as $menu)
-                    <div class="menu-card">
+                    <div class="menu-card" data-kategori="{{ $kategori }}" data-nama="{{ strtolower($menu->nama_menu) }}">
                         <div class="menu-img">
                             @if($menu->gambar)
                                 <img src="{{ asset('storage/' . $menu->gambar) }}">
                             @else
-                                <div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:48px;">☕</div>
+                                <div style="font-size:48px;">☕</div>
                             @endif
                         </div>
                         <div class="menu-body">
@@ -413,14 +440,12 @@
         </div>
     </div>
 
-    <!-- RIGHT SIDE: KERANJANG -->
     <div class="right">
         <div class="cart-header">
             <div class="cart-title">Keranjang</div>
         </div>
 
         <div class="cart-items" id="cart-items">
-            <!-- Item akan muncul di sini -->
             <div class="empty">Belum ada pesanan</div>
         </div>
 
@@ -435,10 +460,53 @@
 </div>
 
 <script>
-    // 1. Data Penampung (State)
+    // State Keranjang Belanja
     let keranjang = [];
 
-    // 2. Update Nama Pelanggan Otomatis
+    // 1. JAVASCRIPT UNTUK MENYESUAIKAN TOMBOL KATEGORI (FIXED)
+    function filterKategori(kategori, btnElemen) {
+        // Atur efek aktif warna tombol
+        const tombols = document.querySelectorAll('.kategori-btn');
+        tombols.forEach(btn => btn.classList.remove('active'));
+        btnElemen.classList.add('active');
+
+        // Saring menu berdasarkan kategori yang dipilih
+        const cards = document.querySelectorAll('.menu-card');
+        cards.forEach(card => {
+            const kategoriCard = card.getAttribute('data-kategori');
+            
+            if (kategori === 'Semua' || kategoriCard === kategori) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Reset kolom pencarian saat ganti kategori agar tidak bentrok
+        document.getElementById('search-input').value = "";
+    }
+
+    // 2. JAVASCRIPT UNTUK FITUR PENCARIAN LIVE TEXT
+    function filterSearch() {
+        const kataKunci = document.getElementById('search-input').value.toLowerCase();
+        const cards = document.querySelectorAll('.menu-card');
+        
+        // Kembalikan tombol kategori ke "Semua" secara otomatis saat mulai mengetik bebas
+        const tombols = document.querySelectorAll('.kategori-btn');
+        tombols.forEach(btn => btn.classList.remove('active'));
+        tombols[0].classList.add('active');
+
+        cards.forEach(card => {
+            const namaMenu = card.getAttribute('data-nama');
+            if(namaMenu.includes(kataKunci)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // 3. Update Nama Pelanggan Otomatis
     function updateNama() {
         const select = document.getElementById('select-id-pelanggan');
         const inputNama = document.getElementById('input-nama-pelanggan');
@@ -447,16 +515,13 @@
         inputNama.value = nama ? nama : "";
     }
 
-    // 3. Fungsi Tambah ke Keranjang
+    // 4. Tambah ke Keranjang
     function addToCart(id, nama, harga) {
-        // Cek apakah item sudah ada di keranjang
         const itemIndex = keranjang.findIndex(item => item.id === id);
 
         if (itemIndex > -1) {
-            // Jika ada, tambah quantity
             keranjang[itemIndex].qty += 1;
         } else {
-            // Jika belum ada, push object baru
             keranjang.push({
                 id: id,
                 nama: nama,
@@ -467,13 +532,12 @@
         renderKeranjang();
     }
 
-    // 4. Ubah Quantity (Tambah/Kurang)
+    // 5. Kurang / Tambah Kuantitas
     function changeQty(id, delta) {
         const itemIndex = keranjang.findIndex(item => item.id === id);
         if (itemIndex > -1) {
             keranjang[itemIndex].qty += delta;
             
-            // Jika qty 0, hapus dari keranjang
             if (keranjang[itemIndex].qty <= 0) {
                 keranjang.splice(itemIndex, 1);
             }
@@ -481,7 +545,7 @@
         renderKeranjang();
     }
 
-    // 5. Render Tampilan Keranjang
+    // 6. Tampilkan / Render ulang Data Keranjang Belanja
     function renderKeranjang() {
         const cartContainer = document.getElementById('cart-items');
         const totalDisplay = document.getElementById('total');
@@ -518,7 +582,7 @@
         totalDisplay.innerText = 'Rp ' + totalHarga.toLocaleString('id-ID');
     }
 
-    // 6. Proses Bayar (Kirim ke Server)
+    // 7. Proses Pembayaran
     function prosesBayar() {
         const pelangganId = document.getElementById('select-id-pelanggan').value;
         const meja = document.getElementById('select-meja').value;
@@ -534,9 +598,8 @@
         };
 
         console.log("Mengirim data ke server:", dataPesanan);
-        alert("Pesanan Berhasil! Cek console untuk data JSON.");
+        alert("Pesanan Berhasil! Cek console untuk melihat data JSON.");
         
-        // Reset keranjang setelah bayar
         keranjang = [];
         renderKeranjang();
     }
