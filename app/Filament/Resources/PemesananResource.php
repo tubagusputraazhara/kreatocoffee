@@ -4,162 +4,75 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PemesananResource\Pages;
 use App\Models\Pemesanan;
-use App\Models\menu;
-use App\Models\pelanggan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Layout\Stack;
 
 class PemesananResource extends Resource
 {
     protected static ?string $model = Pemesanan::class;
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
     protected static ?string $navigationLabel = 'Pemesanan';
     protected static ?string $navigationGroup = 'Transaksi';
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                TextInput::make('id_pemesanan')
-                    ->label('ID Pemesanan')
-                    ->default(function () {
-                        $count = \App\Models\Pemesanan::count();
-                        return 'P-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-                    })
-                    ->readOnly()
-                    ->required(),
-
-                Select::make('id_pelanggan')
-                    ->label('ID Pelanggan')
-                    ->options(pelanggan::all()->pluck('id', 'id'))
-                    ->searchable()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $dataPelanggan = pelanggan::find($state);
-
-                        if ($dataPelanggan) {
-                            $set('nama_pelanggan', $dataPelanggan->nama_pelanggan);
-                        }
-                    })
-                    ->required(),
-
-                Select::make('id_meja')
-                    ->label('No Meja')
-                    ->options(
-                        collect(range(1, 20))
-                            ->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])
-                    )
-                    ->required(),
-
-                Select::make('nama_pesanan')
-                    ->label('Pilih Menu')
-                    ->options(menu::all()->pluck('nama_menu', 'nama_menu'))
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-
-                        $item = menu::where('nama_menu', $state)->first();
-
-                        if ($item) {
-                            $set('harga_satuan', $item->harga);
-                        }
-                    })
-                    ->required(),
-
-                TextInput::make('nama_pelanggan')
-                    ->label('Nama Pelanggan')
-                    ->readOnly(),
-
-                TextInput::make('harga_satuan')
-                    ->label('Harga Satuan')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->readOnly(),
-
-                TextInput::make('jumlah')
-                    ->label('Jumlah')
-                    ->numeric()
-                    ->required()
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, callable $get) {
-
-                        $set(
-                            'total_harga',
-                            (float)$get('harga_satuan') * (int)$get('jumlah')
-                        );
-                    }),
-
-                TextInput::make('total_harga')
-                    ->label('Total Harga')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->readOnly(),
-
-                Textarea::make('catatan')
-                    ->label('Catatan')
-                    ->columnSpanFull(),
-            ]);
+        return $form->schema([
+            Forms\Components\TextInput::make('kode_pemesanan')->readOnly(),
+            Forms\Components\TextInput::make('nama_pemesan')->required(),
+            Forms\Components\Select::make('no_meja')
+                ->options(collect(range(1, 20))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
+            Forms\Components\TextInput::make('total_harga')->prefix('Rp')->numeric(),
+            Forms\Components\Textarea::make('catatan')->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('id_pemesanan')
-                    ->label('ID')
-                    ->sortable(),
+                Stack::make([
+                    TextColumn::make('kode_pemesanan')->weight('bold')->color('primary'),
+                    TextColumn::make('nama_pemesan')->color('gray'),
+                    TextColumn::make('no_meja')->formatStateUsing(fn ($state) => "Meja " . $state)->size('sm'),
+                ])->space(1),
 
-                TextColumn::make('id_meja')
-                    ->label('No Meja')
-                    ->formatStateUsing(fn ($state) => "Meja " . $state)
-                    ->sortable(),
+                TextColumn::make('details.nama_menu')
+                    ->label('Pesanan')
+                    ->listWithLineBreaks()
+                    ->bulleted(),
 
-                TextColumn::make('nama_pelanggan')
-                    ->label('Pelanggan')
-                    ->searchable(),
-
-                TextColumn::make('nama_pesanan')
-                    ->label('Menu'),
-
-                TextColumn::make('jumlah')
-                    ->label('Qty'),
+                TextColumn::make('details.qty')
+                    ->label('Qty')
+                    ->alignCenter(),
 
                 TextColumn::make('total_harga')
                     ->label('Total')
-                    ->money('idr'),
+                    ->money('idr')
+                    ->weight('bold')
+                    ->color('success'),
 
                 TextColumn::make('created_at')
                     ->label('Waktu')
-                    ->dateTime(),
+                    ->since(),
             ])
-
-            //supaya menuju ke kasir
+            ->defaultSort('created_at', 'desc')
+            ->striped() // Membuat tabel berwarna selang-seling agar menarik
+            ->recordClasses(fn () => 'border-l-4 border-primary-500') // Memberikan aksen warna di samping baris
             ->headerActions([
-
                 Tables\Actions\Action::make('kasir')
                     ->label('New Pemesanan')
-                    ->icon('heroicon-o-shopping-cart')
+                    ->color('primary')
+                    ->icon('heroicon-o-plus-circle')
                     ->url(url('/kasir')),
-
             ])
-        
-            ->filters([])
-
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-            ])
-
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 

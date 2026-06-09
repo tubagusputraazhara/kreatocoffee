@@ -20,6 +20,6 @@ class Pemesanan extends Model
 
     public function details()
     {
-        return $this->hasMany(DetailPemesanan::class, 'id_pemesanan');
+        return $this->hasMany(DetailPemesanan::class, 'id_pemesanan', 'id_pemesanan');
     }
 }

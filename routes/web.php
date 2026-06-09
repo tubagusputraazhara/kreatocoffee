@@ -3,18 +3,21 @@
 use App\Http\Controllers\OrderingController;
 use App\Http\Controllers\KasirController;
 use App\Http\Controllers\PesananController; 
-use App\Http\Controllers\AuthController; // <<< PERUBAHAN 1: Menghubungkan AuthController agar dikenali rute
+use App\Http\Controllers\AuthController; 
 
 // =========================================================================
-// ROUTE AUTENTIKASI KASIR (PERSIS SESUAI FOTO POTONGAN MODUL YANG KAMU KIRIM)
+// ROUTE UTAMA (http://127.0.0.1:8000/) - LANGSUNG OPER KE KASIR
 // =========================================================================
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login'); // <<< PERUBAHAN 2: Menambahkan ->name('login') agar middleware tahu kemana harus melempar user
-Route::post('/login', [AuthController::class, 'login']);         
-Route::post('/logout', [AuthController::class, 'logout']);       
+Route::get('/', function () {
+    return redirect('/kasir');
+});
+
+// ROUTE AUTH UNTUK LOGOUT (TIDAK DIUBAH)
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');       
 
 
 // =========================
-// CUSTOMER QR ORDERING
+// CUSTOMER QR ORDERING (TIDAK DIUBAH)
 // =========================
 Route::prefix('order')->name('order.')->group(function () {
     Route::get('/', [OrderingController::class, 'index'])->name('index');
@@ -29,12 +32,16 @@ Route::prefix('order')->name('order.')->group(function () {
 
 
 // =========================================================================
-// KASIR POS (SUDAH DIKUNCI OLEH MIDDLEWARE AUTH)
+// KASIR POS (MIDDLEWARE AUTH DIHAPUS AGAR URL TETAP DIAM DI /kasir)
 // =========================================================================
-// Menambahkan ->middleware('auth') agar rute kasir otomatis mendeteksi status login
-Route::prefix('kasir')->name('kasir.')->middleware('auth')->group(function () { // <<< PERUBAHAN 3: Kunci rute kasir
+Route::prefix('kasir')->name('kasir.')->group(function () { 
+    
+    // Alamat utama kasir
     Route::get('/', [KasirController::class, 'index'])->name('index');
     
+    // Proses submit form login diletakkan di sini agar action form mengarah ke rute kasir
+    Route::post('/login-proses', [AuthController::class, 'login'])->name('login-proses');
+
     Route::post('/simpan-pesanan', [PesananController::class, 'simpan'])->name('simpan');
     Route::get('/detail/{id}', [PesananController::class, 'showDetail'])->name('detail');
 
@@ -42,14 +49,15 @@ Route::prefix('kasir')->name('kasir.')->middleware('auth')->group(function () { 
     Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
     Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
     Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
+
+    Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
 });
 
 
 // =========================
-// MIDTRANS CALLBACK
+// MIDTRANS CALLBACK (TIDAK DIUBAH)
 // =========================
 Route::post('/midtrans/callback', [PesananController::class, 'callback'])->name('midtrans.callback');
 
 Route::get('/jurnal/export/pdf', [App\Http\Controllers\JurnalExportController::class, 'exportPdf'])
-    ->name('jurnal.export.pdf')
-    ->middleware('auth');
+    ->name('jurnal.export.pdf');

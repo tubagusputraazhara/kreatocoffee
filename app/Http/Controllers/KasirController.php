@@ -4,70 +4,60 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Menu;
-use Illuminate\Support\Facades\DB; // Tambahkan ini agar bisa ambil data tanpa Model
+use App\Models\Pemesanan;
+use App\Models\DetailPemesanan;
+use App\Models\Pelanggan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class KasirController extends Controller
 {
+    // <<< TAMBAHAN: Logika untuk satu URL /kasir
     public function index()
     {
-        // 1. Ambil data menu
+        if (!Auth::check()) {
+            return view('login'); // Menampilkan login
+        }
+
+        $pelanggans = Pelanggan::all();
         $menus = Menu::all()->groupBy('kategori');
-
-        // 2. Ambil data pelanggan langsung dari tabel database
-        // Ganti 'pelanggan' dengan nama tabel kamu jika berbeda
-        $pelanggans = DB::table('pelanggan')->get(); 
-
-        // 3. Kirim ke view
-        return view('kasir.index', compact('menus', 'pelanggans'));
-    }
-
-    public function addToCart(Request $request)
-    {
-        $cart = session()->get('kasir_cart', []);
-        $id = $request->id_menu;
-
-        if (isset($cart[$id])) {
-            $cart[$id]['qty']++;
-        } else {
-            $cart[$id] = [
-                'id_menu'   => $id,
-                'nama_menu' => $request->nama_menu,
-                'harga'     => $request->harga,
-                'qty'       => 1,
-            ];
-        }
-
-        session()->put('kasir_cart', $cart);
-
-        return response()->json([
-            'success' => true,
-            'cart' => $cart
-        ]);
-    }
-
-    public function removeFromCart(Request $request)
-    {
-        $cart = session()->get('kasir_cart', []);
-        $id = $request->id_menu;
-
-        if (isset($cart[$id])) {
-            if ($cart[$id]['qty'] > 1) {
-                $cart[$id]['qty']--;
-            } else {
-                unset($cart[$id]);
-            }
-        }
-
-        session()->put('kasir_cart', $cart);
-
-        return response()->json([
-            'success' => true,
-            'cart' => $cart
-        ]);
+        return view('kasir.index', compact('pelanggans', 'menus'));
     }
 
     public function checkout(Request $request)
     {
-        // Logika checkout
+        $request->validate([
+            'total_harga' => 'required|numeric',
+            'items'       => 'required|array'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $pemesanan = new Pemesanan();
+            $pemesanan->kode_pemesanan = Pemesanan::generateKode();
+            $pemesanan->nama_pemesan   = $request->nama_pemesan;
+            $pemesanan->no_meja        = $request->no_meja;
+            $pemesanan->catatan        = $request->catatan;
+            $pemesanan->total_harga    = $request->total_harga;
+            $pemesanan->status         = '1';
+            $pemesanan->save();
+
+            foreach ($request->items as $item) {
+                $detail = new DetailPemesanan();
+                $detail->id_pemesanan = $pemesanan->id_pemesanan;
+                $detail->id_menu      = $item['id'];
+                $detail->nama_menu    = $item['nama'];
+                $detail->harga_satuan = $item['harga'];
+                $detail->qty          = $item['qty'];
+                $detail->subtotal     = $item['harga'] * $item['qty'];
+                $detail->save();
+            }
+
+            DB::commit();
+            return response()->json(['status' => 'success', 'message' => 'Transaksi berhasil disimpan.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => 'Error Database: ' . $e->getMessage()], 500);
+        }
     }
 }
