@@ -4,17 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PemesananResource\Pages;
 use App\Models\Pemesanan;
-use App\Models\menu;
-use App\Models\pelanggan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\Layout\Stack;
 
 class PemesananResource extends Resource
 {
@@ -25,6 +21,14 @@ class PemesananResource extends Resource
 
     public static function form(Form $form): Form
     {
+        return $form->schema([
+            Forms\Components\TextInput::make('kode_pemesanan')->readOnly(),
+            Forms\Components\TextInput::make('nama_pemesan')->required(),
+            Forms\Components\Select::make('no_meja')
+                ->options(collect(range(1, 20))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
+            Forms\Components\TextInput::make('total_harga')->prefix('Rp')->numeric(),
+            Forms\Components\Textarea::make('catatan')->columnSpanFull(),
+        ]);
         return $form
             ->schema([
                 TextInput::make('id_pemesanan')
@@ -110,6 +114,20 @@ class PemesananResource extends Resource
     {
         return $table
             ->columns([
+                Stack::make([
+                    TextColumn::make('kode_pemesanan')->weight('bold')->color('primary'),
+                    TextColumn::make('nama_pemesan')->color('gray'),
+                    TextColumn::make('no_meja')->formatStateUsing(fn ($state) => "Meja " . $state)->size('sm'),
+                ])->space(1),
+
+                TextColumn::make('details.nama_menu')
+                    ->label('Pesanan')
+                    ->listWithLineBreaks()
+                    ->bulleted(),
+
+                TextColumn::make('details.qty')
+                    ->label('Qty')
+                    ->alignCenter(),
                 TextColumn::make('id_pemesanan')
                     ->label('ID')
                     ->sortable(),
@@ -144,7 +162,9 @@ class PemesananResource extends Resource
 
                 TextColumn::make('total_harga')
                     ->label('Total')
-                    ->money('idr'),
+                    ->money('idr')
+                    ->weight('bold')
+                    ->color('success'),
 
                 TextColumn::make('status')
                     ->label('Status')
@@ -163,7 +183,17 @@ class PemesananResource extends Resource
 
                 TextColumn::make('created_at')
                     ->label('Waktu')
-                    ->dateTime(),
+                    ->since(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->striped() // Membuat tabel berwarna selang-seling agar menarik
+            ->recordClasses(fn () => 'border-l-4 border-primary-500') // Memberikan aksen warna di samping baris
+            ->headerActions([
+                Tables\Actions\Action::make('kasir')
+                    ->label('New Pemesanan')
+                    ->color('primary')
+                    ->icon('heroicon-o-plus-circle')
+                    ->url(url('/kasir')),
             ])
 
             ->headerActions([
@@ -183,12 +213,6 @@ class PemesananResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
-            ])
-
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
     }
 
