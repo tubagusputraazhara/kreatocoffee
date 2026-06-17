@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('karyawans', function (Blueprint $table) {
-            $table->string('id_karyawan')->primary(); // ID Karyawan
-            $table->string('nama'); // Nama
-            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']); // Jenis kelamin
-            $table->date('tanggal_lahir'); // Tanggal lahir
+        Schema::create('jabatan', function (Blueprint $table) {
+            $table->string('id_jabatan')->primary();         // ID Penggajian
             $table->string('jabatan');
+            $table->decimal('gaji_pokok', 15, 2)->default(0);  
             $table->timestamps();
         });
-        
     }
 
     /**
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('karyawans');
+        Schema::dropIfExists('jabatan');
     }
 };

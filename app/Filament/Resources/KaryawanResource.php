@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\KaryawanResource\Pages;
 use App\Filament\Resources\KaryawanResource\RelationManagers;
 use App\Models\Karyawan;
+use App\Models\Jabatan; // tambahan: import model Jabatan untuk dropdown
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -45,6 +46,9 @@ class KaryawanResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $navigationGroup = 'Master Data';
+    protected static ?string $navigationLabel = 'Karyawan';
+    protected static ?string $pluralModelLabel = 'Karyawan';
+    protected static ?string $modelLabel = 'Karyawan';
 
     public static function form(Form $form): Form
     {
@@ -77,13 +81,16 @@ class KaryawanResource extends Resource
                     ->label('Tanggal Lahir')
                     ->required(),
 
-                TextInput::make('gaji')
-                    ->label('Gaji')
+                // tambahan: ganti TextInput jabatan menjadi Select dari master data Jabatan
+                Select::make('jabatan')
+                    ->label('Jabatan')
+                    ->options(
+                        Jabatan::all()->pluck('jabatan', 'jabatan') // value & label = nama jabatan
+                    )
+                    ->searchable()
                     ->required()
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->minValue(0)
-                    ->placeholder('Contoh: 3000000'),
+                    ->placeholder('Pilih Jabatan'),
+
             ]);
     }
 
@@ -109,10 +116,11 @@ class KaryawanResource extends Resource
                     ->label('Tanggal Lahir')
                     ->sortable(),
 
-                TextColumn::make('gaji')
-                    ->label('Gaji')
-                    ->money('IDR')
+                TextColumn::make('jabatan')
+                    ->label('Jabatan')
                     ->sortable(),
+
+
             ])
             ->filters([
                 //

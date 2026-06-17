@@ -75,7 +75,7 @@ class PenggajianResource extends Resource
                                 ->required()
                                 ->searchable()
                                 ->live()
-                                // Tampilkan format: "KYN001 - Budi Santoso"
+                                // Tampilkan format: "KYN001"
                                 ->options(
                                     Karyawan::all()->mapWithKeys(fn ($k) => [
                                         $k->id_karyawan => $k->id_karyawan . ' - ' . $k->nama
@@ -85,12 +85,17 @@ class PenggajianResource extends Resource
                                     if ($state) {
                                         $karyawan = Karyawan::find($state);
                                         if ($karyawan) {
-                                            // Otomatis isi gaji pokok dari data karyawan
-                                            $set('gaji_pokok', $karyawan->gaji);
+                                            // Ambil gaji_pokok dari master data jabatan berdasarkan nama jabatan
+                                            $jabatan = \App\Models\Jabatan::where('jabatan', $karyawan->jabatan)->first();
+                                            $gajiPokok = $jabatan ? (float) $jabatan->gaji_pokok : 0;
+
+                                            // Otomatis isi gaji pokok
+                                            $set('gaji_pokok', $gajiPokok);
+
                                             // Hitung ulang gaji bersih
                                             $tunjangan = (float) $get('tunjangan') ?? 0;
                                             $potongan  = (float) $get('potongan')  ?? 0;
-                                            $set('gaji_bersih', ($karyawan->gaji + $tunjangan) - $potongan);
+                                            $set('gaji_bersih', ($gajiPokok + $tunjangan) - $potongan);
                                         } else {
                                             $set('gaji_pokok', 0);
                                             $set('gaji_bersih', 0);

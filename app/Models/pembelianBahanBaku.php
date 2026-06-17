@@ -1,55 +1,86 @@
 <?php
 
 namespace App\Models;
-//
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-
 
 class pembelianBahanBaku extends Model
 {
     use HasFactory;
 
-    protected $table = 'pembelian_bahan_bakus'; // Nama tabel sudah benar[cite: 1]
-
+    protected $table = 'pembelian_bahan_bakus';
     protected $guarded = [];
-
-    // PERHATIKAN: Jika ID tabel ini adalah Primary Key Integer (Auto Increment), 
-    // maka dua baris di bawah ini sebaiknya DIHAPUS. 
-    // Gunakan ini HANYA jika ID utama tabel pembelian juga berupa string (seperti B001).
-    // public $incrementing = false; 
-    // protected $keyType = 'string';
 
     public static function getKodeFaktur()
     {
-        // Query untuk mengambil no_faktur terakhir
         $sql = "SELECT IFNULL(MAX(no_faktur), 'PB-0000000') as no_faktur 
-                FROM pembelian_bahan_bakus ";
+                FROM pembelian_bahan_bakus";
         $kodefaktur = DB::select($sql);
 
-        $kd = $kodefaktur[0]->no_faktur; // Mengambil hasil pertama langsung tanpa foreach
+        $kd      = $kodefaktur[0]->no_faktur;
+        $noawal  = substr($kd, -7);
+        $noakhir = (int) $noawal + 1;
+        $noakhir = 'PB-' . str_pad($noakhir, 7, '0', STR_PAD_LEFT);
 
-        // Mengambil 7 digit angka terakhir dari string PB-0000001
-        $noawal = substr($kd, -7);
-        $noakhir = (int)$noawal + 1; // Konversi ke integer lalu tambah 1
-        $noakhir = 'PB-' . str_pad($noakhir, 7, "0", STR_PAD_LEFT); 
-        
         return $noakhir;
     }
 
-    // Relasi ke tabel bahanBaku (Master Data)
     public function bahanBaku()
     {
-        // Karena bahanBaku menggunakan ID string (B001), 
-        // kita harus pastikan foreign key-nya mengarah ke kolom 'id'[cite: 1, 3]
         return $this->belongsTo(bahanBaku::class, 'bahanBaku_id', 'id');
     }
 
-    // Relasi ke Karyawan (Jika ada tabel Karyawan)
-    public function Karyawan()
+    // ✅ Hanya tambah boot() ini, semua kode di atas tidak diubah
+    protected static function boot()
     {
-        // PERBAIKAN: Jika ini relasi ke Karyawan, modelnya harus Karyawan::class, bukan bahanBaku::class
-        // return $this->belongsTo(Karyawan::class, 'Karyawan_id'); 
+        parent::boot();
+
+        // Saat pembelian DIBUAT → stok bertambah
+        static::created(function ($pembelian) {
+            bahanBaku::where('id', $pembelian->bahanBaku_id)
+                ->increment('stok', $pembelian->jumlah);
+        });
+
+        // Saat pembelian DIEDIT → simpan data lama dulu
+        static::updating(function ($pembelian) {
+            $pembelian->jumlah_lama = $pembelian->getOriginal('jumlah');
+            $pembelian->bahan_lama  = $pembelian->getOriginal('bahanBaku_id');
+        });
+
+        static::updated(function ($pembelian) {
+            $jumlahLama = $pembelian->jumlah_lama ?? 0;
+            $bahanLama  = $pembelian->bahan_lama;
+
+            // Jika bahan baku diganti
+            if ($bahanLama !== $pembelian->bahanBaku_id) {
+                // Kembalikan stok bahan lama
+                bahanBaku::where('id', $bahanLama)
+                    ->decrement('stok', $jumlahLama);
+
+                // Tambah stok bahan baru
+                bahanBaku::where('id', $pembelian->bahanBaku_id)
+                    ->increment('stok', $pembelian->jumlah);
+
+            } else {
+                // Bahan sama, hitung selisih
+                $selisih = $pembelian->jumlah - $jumlahLama;
+
+                if ($selisih > 0) {
+                    bahanBaku::where('id', $pembelian->bahanBaku_id)
+                        ->increment('stok', $selisih);
+                } elseif ($selisih < 0) {
+                    bahanBaku::where('id', $pembelian->bahanBaku_id)
+                        ->decrement('stok', abs($selisih));
+                }
+            }
+        });
+
+        // Saat pembelian DIHAPUS → stok dikurangi kembali
+        static::deleted(function ($pembelian) {
+            bahanBaku::where('id', $pembelian->bahanBaku_id)
+                ->decrement('stok', $pembelian->jumlah);
+        });
     }
 }

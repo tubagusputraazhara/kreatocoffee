@@ -15,6 +15,8 @@ Route::get('/', function () {
 // ROUTE AUTH UNTUK LOGOUT (TIDAK DIUBAH)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');       
 
+use App\Http\Controllers\JurnalExportController;
+use App\Http\Controllers\PemesananExportController;
 
 // =========================
 // CUSTOMER QR ORDERING (TIDAK DIUBAH)
@@ -25,8 +27,10 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::get('/menu', [OrderingController::class, 'menu'])->name('menu');
     Route::post('/add-to-cart', [OrderingController::class, 'addToCart'])->name('addToCart');
     Route::post('/remove-from-cart', [OrderingController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/update-cart', [OrderingController::class, 'updateCart'])->name('updateCart');
     Route::get('/checkout', [OrderingController::class, 'checkout'])->name('checkout');
     Route::post('/payment', [OrderingController::class, 'payment'])->name('payment');
+    Route::post('/update-status', [OrderingController::class, 'updateStatus'])->name('updateStatus');
     Route::get('/success', [OrderingController::class, 'success'])->name('success');
 });
 
@@ -51,6 +55,15 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
 
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
+// =========================
+// KASIR POS
+// =========================
+Route::prefix('kasir')->name('kasir.')->group(function () {
+    Route::get('/', [KasirController::class, 'index'])->name('index');
+    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
+    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
+    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
 });
 
 
@@ -61,3 +74,18 @@ Route::post('/midtrans/callback', [PesananController::class, 'callback'])->name(
 
 Route::get('/jurnal/export/pdf', [App\Http\Controllers\JurnalExportController::class, 'exportPdf'])
     ->name('jurnal.export.pdf');
+// MIDTRANS CALLBACK
+// =========================
+Route::post('/midtrans/callback', [KasirController::class, 'midtransCallback'])
+    ->name('midtrans.callback');
+
+// =========================
+// EXPORT PDF
+// =========================
+Route::get('/jurnal/export/pdf', [JurnalExportController::class, 'exportPdf'])
+    ->name('jurnal.export.pdf')
+    ->middleware('auth');
+
+Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPdf'])
+    ->name('pemesanan.export.pdf')
+    ->middleware('auth');
