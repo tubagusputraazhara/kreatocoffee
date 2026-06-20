@@ -56,6 +56,16 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
 
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
 });
+// =========================
+// KASIR POS
+// =========================
+Route::prefix('kasir')->name('kasir.')->group(function () {
+    Route::get('/', [KasirController::class, 'index'])->name('index');
+    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
+    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
+    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
+});
 
 // =========================
 // MIDTRANS CALLBACK
