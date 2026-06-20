@@ -55,6 +55,7 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
 
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
+});
 // =========================
 // KASIR POS
 // =========================
