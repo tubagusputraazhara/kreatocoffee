@@ -14,4 +14,9 @@ class Coa extends Model
     protected $primaryKey = 'id_coa'; // Custom PK name
 
     protected $guarded = [];
+    
+    public function detailJurnal()
+    {
+        return $this->hasMany(DetailJurnalUmum::class, 'id_coa');
+    }
 }

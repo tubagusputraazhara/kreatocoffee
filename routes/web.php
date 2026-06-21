@@ -6,6 +6,7 @@ use App\Http\Controllers\PesananController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\JurnalExportController;
 use App\Http\Controllers\PemesananExportController;
+use App\Http\Controllers\SupplierController;
 
 // =========================================================================
 // ROUTE UTAMA (http://127.0.0.1:8000/) - LANGSUNG OPER KE KASIR
@@ -55,6 +56,16 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
 
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
 });
+// =========================
+// KASIR POS
+// =========================
+Route::prefix('kasir')->name('kasir.')->group(function () {
+    Route::get('/', [KasirController::class, 'index'])->name('index');
+    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
+    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
+    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
+});
 
 // =========================
 // MIDTRANS CALLBACK
@@ -72,3 +83,6 @@ Route::get('/jurnal/export/pdf', [JurnalExportController::class, 'exportPdf'])
 Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPdf'])
     ->name('pemesanan.export.pdf')
     ->middleware('auth');
+    ->middleware('auth');
+
+Route::resource('suppliers', SupplierController::class);
