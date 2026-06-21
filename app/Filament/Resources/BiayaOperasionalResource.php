@@ -92,6 +92,25 @@ class BiayaOperasionalResource extends Resource
             ->headerActions([
                 // tombol export csv dan excel
                 ExportAction::make()->exporter(BiayaOperasionalExporter::class)->color('success'),
+
+                // tombol baru: preview PDF sebelum download
+                Action::make('previewPdf')
+                    ->label('Lihat PDF')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Preview Daftar Biaya Operasional')
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function () {
+                        $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
+                        $pdf = Pdf::loadView('pdf.BiayaOperasional', [
+                            'biayaOperasionals' => $biayaOperasionals
+                        ])->setPaper('a4', 'portrait');
+                        $base64 = base64_encode($pdf->output());
+                        return view('filament.modals.pdf-preview', ['base64' => $base64]);
+                    }),
+
                 // tombol unduh PDF
                 Action::make('downloadPdf')
                     ->label('Unduh PDF')
@@ -99,9 +118,9 @@ class BiayaOperasionalResource extends Resource
                     ->color('danger')
                     ->action(function () {
                         $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
-                        $pdf = Pdf::loadView('pdf.BiayaOperasional', [
-                            'biayaOperasionals' => $biayaOperasionals
-                        ]);
+                       $pdf = Pdf::loadView('pdf.BiayaOperasional', [
+                    'biayaOperasionals' => $biayaOperasionals
+                    ])->setPaper('a4', 'portrait');
                         return response()->streamDownload(
                             fn () => print($pdf->output()),
                             'daftar-biaya-operasional.pdf'

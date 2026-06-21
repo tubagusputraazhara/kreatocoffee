@@ -14,11 +14,11 @@ class BiayaOperasionalExporter extends Exporter
     public static function getColumns(): array
     {
         return [
-            ExportColumn::make('id_transaksi')->label('ID Transaksi'),
-            ExportColumn::make('tanggal_transaksi')->label('Tanggal Transaksi'),
-            ExportColumn::make('kategori')->label('Kategori'),
-            ExportColumn::make('keterangan')->label('Keterangan'),
-            ExportColumn::make('jumlah')->label('Jumlah')
+            ExportColumn::make('id_biaya')->label('ID Transaksi'),
+            ExportColumn::make('tgl_biaya')->label('Tanggal Transaksi'),
+            ExportColumn::make('nama_biaya')->label('Keterangan Biaya'),
+            ExportColumn::make('keterangan')->label('Catatan'),
+            ExportColumn::make('jumlah_biaya')->label('Jumlah')
                 ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.')),
             ExportColumn::make('pelanggan.nama')->label('Nama Pelanggan'),
             ExportColumn::make('karyawan.nama')->label('Nama Karyawan'),
