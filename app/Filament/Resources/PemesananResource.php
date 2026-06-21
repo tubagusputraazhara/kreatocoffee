@@ -4,13 +4,13 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PemesananResource\Pages;
 use App\Models\Pemesanan;
+use App\Services\JurnalService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Layout\Stack;
 
 class PemesananResource extends Resource
 {
@@ -25,130 +25,49 @@ class PemesananResource extends Resource
             Forms\Components\TextInput::make('kode_pemesanan')->readOnly(),
             Forms\Components\TextInput::make('nama_pemesan')->required(),
             Forms\Components\Select::make('no_meja')
-                ->options(collect(range(1, 20))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
+                ->options(collect(range(1, 30))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
             Forms\Components\TextInput::make('total_harga')->prefix('Rp')->numeric(),
+            Forms\Components\Select::make('status')
+                ->label('Status Pembayaran')
+                ->options([
+                    'belum_lunas' => 'Belum Lunas',
+                    'lunas'       => 'Lunas',
+                    'batal'       => 'Batal',
+                ]),
+            Forms\Components\Select::make('status_pesanan')
+                ->label('Status Pesanan')
+                ->options([
+                    'diproses'   => 'Sedang Dimasak',
+                    'diantarkan' => 'Sudah Diantarkan',
+                    'selesai'    => 'Selesai',
+                ]),
             Forms\Components\Textarea::make('catatan')->columnSpanFull(),
         ]);
-        return $form
-            ->schema([
-                TextInput::make('id_pemesanan')
-                    ->label('ID Pemesanan')
-                    ->default(function () {
-                        $count = \App\Models\Pemesanan::count();
-                        return 'P-' . str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-                    })
-                    ->readOnly()
-                    ->required(),
-
-                Select::make('id_pelanggan')
-                    ->label('ID Pelanggan')
-                    ->options(pelanggan::all()->pluck('id', 'id'))
-                    ->searchable()
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-                        $dataPelanggan = pelanggan::find($state);
-
-                        if ($dataPelanggan) {
-                            $set('nama_pelanggan', $dataPelanggan->nama_pelanggan);
-                        }
-                    })
-                    ->required(),
-
-                Select::make('id_meja')
-                    ->label('No Meja')
-                    ->options(
-                        collect(range(1, 20))
-                            ->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])
-                    )
-                    ->required(),
-
-                Select::make('nama_pesanan')
-                    ->label('Pilih Menu')
-                    ->options(menu::all()->pluck('nama_menu', 'nama_menu'))
-                    ->reactive()
-                    ->afterStateUpdated(function ($state, callable $set) {
-
-                        $item = menu::where('nama_menu', $state)->first();
-
-                        if ($item) {
-                            $set('harga_satuan', $item->harga);
-                        }
-                    })
-                    ->required(),
-
-                TextInput::make('nama_pelanggan')
-                    ->label('Nama Pelanggan')
-                    ->readOnly(),
-
-                TextInput::make('harga_satuan')
-                    ->label('Harga Satuan')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->readOnly(),
-
-                TextInput::make('jumlah')
-                    ->label('Jumlah')
-                    ->numeric()
-                    ->required()
-                    ->reactive()
-                    ->afterStateUpdated(function (callable $set, callable $get) {
-                        $set(
-                            'total_harga',
-                            (float) $get('harga_satuan') * (int) $get('jumlah')
-                        );
-                    }),
-
-                TextInput::make('total_harga')
-                    ->label('Total Harga')
-                    ->numeric()
-                    ->prefix('Rp')
-                    ->readOnly(),
-
-                Textarea::make('catatan')
-                    ->label('Catatan')
-                    ->columnSpanFull(),
-            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                Stack::make([
-                    TextColumn::make('kode_pemesanan')->weight('bold')->color('primary'),
-                    TextColumn::make('nama_pemesan')->color('gray'),
-                    TextColumn::make('no_meja')->formatStateUsing(fn ($state) => "Meja " . $state)->size('sm'),
-                ])->space(1),
-
-                TextColumn::make('details.nama_menu')
-                    ->label('Pesanan')
-                    ->listWithLineBreaks()
-                    ->bulleted(),
-
-                TextColumn::make('details.qty')
-                    ->label('Qty')
-                    ->alignCenter(),
                 TextColumn::make('id_pemesanan')
                     ->label('ID')
                     ->sortable(),
 
-                // Gabungan: fallback ke id_meja atau no_meja
-                TextColumn::make('no_meja')
-                    ->label('No Meja')
-                    ->getStateUsing(fn ($record) => $record->id_meja
-                        ? 'Meja ' . $record->id_meja
-                        : ($record->no_meja ?? '-'))
-                    ->sortable(),
-
-                // Gabungan: fallback ke nama_pelanggan atau nama_pemesan
-                TextColumn::make('nama_pemesan')
-                    ->label('Pelanggan')
-                    ->getStateUsing(fn ($record) => $record->nama_pelanggan
-                        ?? $record->nama_pemesan
-                        ?? '-')
+                TextColumn::make('kode_pemesanan')
+                    ->label('Kode')
+                    ->weight('bold')
+                    ->color('primary')
                     ->searchable(),
 
-                // Gabungan: tampilkan detail menu jika ada, fallback ke nama_pesanan
+                TextColumn::make('no_meja')
+                    ->label('No Meja')
+                    ->getStateUsing(fn ($record) => $record->no_meja ?? '-')
+                    ->sortable(),
+
+                TextColumn::make('nama_pemesan')
+                    ->label('Pelanggan')
+                    ->searchable(),
+
                 TextColumn::make('details_summary')
                     ->label('Menu')
                     ->getStateUsing(function ($record) {
@@ -166,14 +85,38 @@ class PemesananResource extends Resource
                     ->weight('bold')
                     ->color('success'),
 
+                // ✅ Status pembayaran
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label('Pembayaran')
                     ->badge()
                     ->color(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'selesai' => 'success',
-                        'batal'   => 'danger',
-                        default   => 'gray',
+                        'belum_lunas' => 'warning',
+                        'lunas'       => 'success',
+                        'batal'       => 'danger',
+                        default       => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'belum_lunas' => 'Belum Lunas',
+                        'lunas'       => 'Lunas',
+                        'batal'       => 'Batal',
+                        default       => $state,
+                    }),
+
+                // ✅ Status pesanan
+                TextColumn::make('status_pesanan')
+                    ->label('Status Pesanan')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'diproses'   => 'warning',
+                        'diantarkan' => 'info',
+                        'selesai'    => 'success',
+                        default      => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'diproses'   => 'Sedang Dimasak',
+                        'diantarkan' => 'Sudah Diantarkan',
+                        'selesai'    => 'Selesai',
+                        default      => $state,
                     }),
 
                 TextColumn::make('sumber')
@@ -186,31 +129,56 @@ class PemesananResource extends Resource
                     ->since(),
             ])
             ->defaultSort('created_at', 'desc')
-            ->striped() // Membuat tabel berwarna selang-seling agar menarik
-            ->recordClasses(fn () => 'border-l-4 border-primary-500') // Memberikan aksen warna di samping baris
-            ->headerActions([
-                Tables\Actions\Action::make('kasir')
-                    ->label('New Pemesanan')
-                    ->color('primary')
-                    ->icon('heroicon-o-plus-circle')
-                    ->url(url('/kasir')),
-            ])
+            ->striped()
+            ->recordClasses(fn () => 'border-l-4 border-primary-500')
 
             ->headerActions([
-                // Dari versi temanmu: tombol shortcut ke halaman kasir
                 Tables\Actions\Action::make('kasir')
                     ->label('Buka Kasir')
                     ->icon('heroicon-o-calculator')
+                    ->color('primary')
                     ->url(url('/kasir')),
-
-                // Dari versi kamu: tombol buat pemesanan baru standar Filament
-                Tables\Actions\CreateAction::make()
-                    ->label('New Pemesanan'),
             ])
 
             ->filters([])
 
             ->actions([
+                // ✅ Tandai Lunas Cash — muncul kalau belum lunas
+                Tables\Actions\Action::make('lunas_cash')
+                    ->label('Tandai Lunas (Cash)')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'belum_lunas')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Pembayaran Cash')
+                    ->modalDescription('Pastikan pembayaran cash sudah diterima sebelum mengkonfirmasi.')
+                    ->action(function ($record) {
+                        $record->update(['status' => 'lunas']);
+
+                        // ✅ Trigger jurnal otomatis kalau belum dibuat
+                        if (!$record->jurnal_dibuat) {
+                            JurnalService::jurnalPenjualan($record);
+                            $record->update(['jurnal_dibuat' => true]);
+                        }
+                    }),
+
+                // ✅ Tombol ubah status pesanan
+                Tables\Actions\Action::make('diantarkan')
+                    ->label('Sudah Diantarkan')
+                    ->icon('heroicon-o-truck')
+                    ->color('info')
+                    ->visible(fn ($record) => $record->status_pesanan === 'diproses')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['status_pesanan' => 'diantarkan'])),
+
+                Tables\Actions\Action::make('selesai_pesanan')
+                    ->label('Selesai')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status_pesanan === 'diantarkan')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['status_pesanan' => 'selesai'])),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]);

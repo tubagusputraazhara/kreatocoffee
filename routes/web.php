@@ -83,6 +83,5 @@ Route::get('/jurnal/export/pdf', [JurnalExportController::class, 'exportPdf'])
 Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPdf'])
     ->name('pemesanan.export.pdf')
     ->middleware('auth');
-    ->middleware('auth');
 
 Route::resource('suppliers', SupplierController::class);

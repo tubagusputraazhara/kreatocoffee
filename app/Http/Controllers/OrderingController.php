@@ -163,7 +163,8 @@ class OrderingController extends Controller
             'email'          => session('email'),
             'sumber'         => 'customer',
             'total_harga'    => $total,
-            'status'         => 'pending',
+            'status'         => 'belum_lunas',
+            'status_pesanan' => 'diproses',
             'jurnal_dibuat'  => false,
             'catatan'        => $catatan,
             'order_id'       => $kodePemesanan,
@@ -229,10 +230,9 @@ class OrderingController extends Controller
             $pemesanan->update([
                 'transaction_status' => $status,
                 'payment_type'       => $type,
-                'status'             => $selesai ? 'selesai' : 'pending',
+                'status'             => $selesai ? 'lunas' : 'belum_lunas',
             ]);
 
-            // Trigger jurnal hanya kalau selesai & belum dibuat
             if ($selesai && !$pemesanan->jurnal_dibuat) {
                 JurnalService::jurnalPenjualan($pemesanan);
                 $pemesanan->update(['jurnal_dibuat' => true]);
@@ -263,17 +263,16 @@ class OrderingController extends Controller
                     $pemesanan->update([
                         'transaction_status' => $status->transaction_status,
                         'payment_type'       => $status->payment_type,
-                        'status'             => $selesai ? 'selesai' : 'pending',
+                        'status'             => $selesai ? 'lunas' : 'belum_lunas',
                     ]);
 
-                    // Trigger jurnal hanya kalau selesai & belum dibuat
                     if ($selesai && !$pemesanan->jurnal_dibuat) {
                         JurnalService::jurnalPenjualan($pemesanan);
                         $pemesanan->update(['jurnal_dibuat' => true]);
                     }
                 }
             } catch (\Exception $e) {
-                // Kalau gagal cek, biarkan pending
+                // Kalau gagal cek, biarkan belum_lunas
             }
         }
 
