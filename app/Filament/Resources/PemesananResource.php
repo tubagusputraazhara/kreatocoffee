@@ -31,174 +31,161 @@ class PemesananResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Section::make('Data Pemesanan')
-                    ->description('Informasi pelanggan, meja, dan kode pesanan')
-                    ->icon('heroicon-o-clipboard-document-list')
-                    ->schema([
-                        Grid::make(3)->schema([
-                            TextInput::make('kode_pemesanan')
-                                ->label('Kode Pemesanan')
-                                ->default(fn () => Pemesanan::generateKode())
-                                ->readOnly()
-                                ->required(),
+        return $form->schema([
+            Section::make('Data Pemesanan')
+                ->description('Informasi pelanggan, meja, dan kode pesanan')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->schema([
+                    Grid::make(3)->schema([
+                        TextInput::make('kode_pemesanan')
+                            ->label('Kode Pemesanan')
+                            ->default(fn () => Pemesanan::generateKode())
+                            ->readOnly()
+                            ->required(),
 
-                            Select::make('nama_pemesan')
-                                ->label('Pelanggan')
-                                ->options(
-                                    Pelanggan::all()->mapWithKeys(
-                                        fn ($p) => [$p->nama_pelanggan => '#' . $p->id . ' - ' . $p->nama_pelanggan]
-                                    )
+                        Select::make('nama_pemesan')
+                            ->label('Pelanggan')
+                            ->options(
+                                Pelanggan::all()->mapWithKeys(
+                                    fn ($p) => [$p->nama_pelanggan => '#' . $p->id . ' - ' . $p->nama_pelanggan]
                                 )
-                                ->searchable()
-                                ->required(),
+                            )
+                            ->searchable()
+                            ->required(),
 
-                            TextInput::make('no_meja')
-                                ->label('No Meja')
-                                ->required(),
-                        ]),
+                        TextInput::make('no_meja')
+                            ->label('No Meja')
+                            ->required(),
+                    ]),
 
-                        Grid::make(2)->schema([
-                            TextInput::make('no_wa')
-                                ->label('No. WhatsApp')
-                                ->tel()
-                                ->nullable(),
+                    Grid::make(2)->schema([
+                        TextInput::make('no_wa')
+                            ->label('No. WhatsApp')
+                            ->tel()
+                            ->nullable(),
 
-                            TextInput::make('email')
-                                ->label('Email')
-                                ->email()
-                                ->nullable(),
-                        ]),
-                    ])
-                    ->collapsible(),
+                        TextInput::make('email')
+                            ->label('Email')
+                            ->email()
+                            ->nullable(),
+                    ]),
+                ])
+                ->collapsible(),
 
-                Section::make('Item Pesanan')
-                    ->description('Tambahkan menu yang dipesan, harga dan total dihitung otomatis')
-                    ->icon('heroicon-o-shopping-cart')
-                    ->schema([
-                        Repeater::make('details')
-                            ->relationship('details')
-                            ->label('')
-                            ->schema([
-                                Grid::make(12)->schema([
-                                    Select::make('id_menu')
-                                        ->label('Menu')
-                                        ->options(Menu::all()->pluck('nama_menu', 'id_menu'))
-                                        ->searchable()
-                                        ->reactive()
-                                        ->columnSpan(5)
-                                        ->afterStateUpdated(function ($state, callable $set) {
-                                            $item = Menu::find($state);
+            Section::make('Item Pesanan')
+                ->description('Tambahkan menu yang dipesan, harga dan total dihitung otomatis')
+                ->icon('heroicon-o-shopping-cart')
+                ->schema([
+                    Repeater::make('details')
+                        ->relationship('details')
+                        ->label('')
+                        ->schema([
+                            Grid::make(12)->schema([
+                                Select::make('id_menu')
+                                    ->label('Menu')
+                                    ->options(Menu::all()->pluck('nama_menu', 'id_menu'))
+                                    ->searchable()
+                                    ->reactive()
+                                    ->columnSpan(5)
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        $item = Menu::find($state);
+                                        if ($item) {
+                                            $set('nama_menu', $item->nama_menu);
+                                            $set('harga_satuan', $item->harga);
+                                        }
+                                    })
+                                    ->required(),
 
-                                            if ($item) {
-                                                $set('nama_menu', $item->nama_menu);
-                                                $set('harga_satuan', $item->harga);
-                                            }
-                                        })
-                                        ->required(),
+                                TextInput::make('nama_menu')
+                                    ->hidden()
+                                    ->dehydrated(),
 
-                                    TextInput::make('nama_menu')
-                                        ->hidden()
-                                        ->dehydrated(),
+                                TextInput::make('harga_satuan')
+                                    ->label('Harga Satuan')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->reactive()
+                                    ->columnSpan(3)
+                                    ->afterStateUpdated(
+                                        fn (Get $get, Set $set) => $set('subtotal', (float) $get('harga_satuan') * (int) ($get('qty') ?? 1))
+                                    ),
 
-                                    TextInput::make('harga_satuan')
-                                        ->label('Harga Satuan')
-                                        ->numeric()
-                                        ->prefix('Rp')
-                                        ->reactive()
-                                        ->columnSpan(3)
-                                        ->afterStateUpdated(
-                                            fn (Get $get, Set $set) => $set('subtotal', (float) $get('harga_satuan') * (int) ($get('qty') ?? 1))
-                                        ),
+                                TextInput::make('qty')
+                                    ->label('Qty')
+                                    ->numeric()
+                                    ->default(1)
+                                    ->reactive()
+                                    ->columnSpan(2)
+                                    ->afterStateUpdated(
+                                        fn (Get $get, Set $set) => $set('subtotal', (float) $get('harga_satuan') * (int) ($get('qty') ?? 1))
+                                    )
+                                    ->required(),
 
-                                    TextInput::make('qty')
-                                        ->label('Qty')
-                                        ->numeric()
-                                        ->default(1)
-                                        ->reactive()
-                                        ->columnSpan(2)
-                                        ->afterStateUpdated(
-                                            fn (Get $get, Set $set) => $set('subtotal', (float) $get('harga_satuan') * (int) ($get('qty') ?? 1))
-                                        )
-                                        ->required(),
-
-                                    TextInput::make('subtotal')
-                                        ->label('Subtotal')
-                                        ->numeric()
-                                        ->prefix('Rp')
-                                        ->readOnly()
-                                        ->columnSpan(2),
-                                ]),
-                            ])
-                            ->live()
-                            ->afterStateUpdated(function (Get $get, Set $set) {
+                                TextInput::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->numeric()
+                                    ->prefix('Rp')
+                                    ->readOnly()
+                                    ->columnSpan(2),
+                            ]),
+                        ])
+                        ->live()
+                        ->afterStateUpdated(function (Get $get, Set $set) {
+                            $items = $get('details') ?? [];
+                            $total = collect($items)->sum(fn ($i) => (float) ($i['subtotal'] ?? 0));
+                            $set('total_harga', $total);
+                        })
+                        ->deleteAction(
+                            fn ($action) => $action->after(function (Get $get, Set $set) {
                                 $items = $get('details') ?? [];
                                 $total = collect($items)->sum(fn ($i) => (float) ($i['subtotal'] ?? 0));
                                 $set('total_harga', $total);
                             })
-                            ->deleteAction(
-                                fn ($action) => $action->after(function (Get $get, Set $set) {
-                                    $items = $get('details') ?? [];
-                                    $total = collect($items)->sum(fn ($i) => (float) ($i['subtotal'] ?? 0));
-                                    $set('total_harga', $total);
-                                })
-                            )
-                            ->addActionLabel('+ Tambah Item')
-                            ->collapsible()
-                            ->defaultItems(1)
+                        )
+                        ->addActionLabel('+ Tambah Item')
+                        ->collapsible()
+                        ->defaultItems(1)
+                        ->required(),
+                ]),
+
+            Section::make('Status')
+                ->icon('heroicon-o-credit-card')
+                ->schema([
+                    Grid::make(3)->schema([
+                        TextInput::make('total_harga')
+                            ->label('Total Harga')
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->readOnly()
                             ->required(),
+
+                        // ✅ Status pembayaran (versi main)
+                        Select::make('status')
+                            ->label('Status Pembayaran')
+                            ->options([
+                                'belum_lunas' => 'Belum Lunas',
+                                'lunas'       => 'Lunas',
+                                'batal'       => 'Batal',
+                            ])
+                            ->default('belum_lunas')
+                            ->required(),
+
+                        // ✅ Status pesanan (versi main)
+                        Select::make('status_pesanan')
+                            ->label('Status Pesanan')
+                            ->options([
+                                'diproses'   => 'Sedang Dimasak',
+                                'diantarkan' => 'Sudah Diantarkan',
+                                'selesai'    => 'Selesai',
+                            ])
+                            ->default('diproses'),
                     ]),
 
-                Section::make('Status')
-                    ->icon('heroicon-o-credit-card')
-                    ->schema([
-                        Grid::make(2)->schema([
-                            TextInput::make('total_harga')
-                                ->label('Total Harga')
-                                ->numeric()
-                                ->prefix('Rp')
-                                ->readOnly()
-                                ->required(),
-
-                            Select::make('status')
-                                ->label('Status Pemesanan')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'selesai' => 'Selesai',
-                                    'batal'   => 'Batal',
-                                ])
-                                ->default('pending')
-                                ->required(),
-                        ]),
-
-                        Textarea::make('catatan')
-                            ->label('Catatan')
-                            ->helperText('Metode pembayaran (CASH/QRIS) bisa dituliskan di sini, misal: [CASH] tanpa kembalian')
-                            ->columnSpanFull(),
-                    ]),
-            ]);
-        return $form->schema([
-            Forms\Components\TextInput::make('kode_pemesanan')->readOnly(),
-            Forms\Components\TextInput::make('nama_pemesan')->required(),
-            Forms\Components\Select::make('no_meja')
-                ->options(collect(range(1, 30))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
-            Forms\Components\TextInput::make('total_harga')->prefix('Rp')->numeric(),
-            Forms\Components\Select::make('status')
-                ->label('Status Pembayaran')
-                ->options([
-                    'belum_lunas' => 'Belum Lunas',
-                    'lunas'       => 'Lunas',
-                    'batal'       => 'Batal',
+                    Textarea::make('catatan')
+                        ->label('Catatan')
+                        ->helperText('Metode pembayaran (CASH/QRIS) bisa dituliskan di sini')
+                        ->columnSpanFull(),
                 ]),
-            Forms\Components\Select::make('status_pesanan')
-                ->label('Status Pesanan')
-                ->options([
-                    'diproses'   => 'Sedang Dimasak',
-                    'diantarkan' => 'Sudah Diantarkan',
-                    'selesai'    => 'Selesai',
-                ]),
-            Forms\Components\Textarea::make('catatan')->columnSpanFull(),
         ]);
     }
 
@@ -206,27 +193,6 @@ class PemesananResource extends Resource
     {
         return $table
             ->columns([
-                Stack::make([
-                    TextColumn::make('kode_pemesanan')
-                        ->label('Kode')
-                        ->weight('bold')
-                        ->color('primary')
-                        ->icon('heroicon-o-hashtag')
-                        ->searchable(),
-
-                    TextColumn::make('nama_pemesan')
-                        ->label('Pelanggan')
-                        ->icon('heroicon-o-user')
-                        ->color('gray')
-                        ->searchable(),
-
-                    TextColumn::make('no_meja')
-                        ->label('Meja')
-                        ->formatStateUsing(fn ($state) => 'Meja ' . $state)
-                        ->icon('heroicon-o-map-pin')
-                        ->size('sm')
-                        ->color('gray'),
-                ])->space(2),
                 TextColumn::make('id_pemesanan')
                     ->label('ID')
                     ->sortable(),
@@ -235,6 +201,7 @@ class PemesananResource extends Resource
                     ->label('Kode')
                     ->weight('bold')
                     ->color('primary')
+                    ->icon('heroicon-o-hashtag')
                     ->searchable(),
 
                 TextColumn::make('no_meja')
@@ -244,6 +211,7 @@ class PemesananResource extends Resource
 
                 TextColumn::make('nama_pemesan')
                     ->label('Pelanggan')
+                    ->icon('heroicon-o-user')
                     ->searchable(),
 
                 TextColumn::make('details_summary')
@@ -288,12 +256,6 @@ class PemesananResource extends Resource
                 TextColumn::make('status_pesanan')
                     ->label('Status Pesanan')
                     ->badge()
-                    ->icon(fn ($state) => match ($state) {
-                        'pending' => 'heroicon-o-clock',
-                        'selesai' => 'heroicon-o-check-circle',
-                        'batal'   => 'heroicon-o-x-circle',
-                        default   => 'heroicon-o-question-mark-circle',
-                    })
                     ->color(fn ($state) => match ($state) {
                         'diproses'   => 'warning',
                         'diantarkan' => 'info',
@@ -308,7 +270,7 @@ class PemesananResource extends Resource
                     }),
 
                 TextColumn::make('catatan')
-                    ->label('Metode / Catatan')
+                    ->label('Catatan')
                     ->limit(40)
                     ->color('gray')
                     ->size('sm'),
@@ -328,32 +290,36 @@ class PemesananResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->striped()
             ->recordClasses(fn ($record) => match ($record->status) {
-                'selesai' => 'border-l-4 border-success-500',
-                'batal'   => 'border-l-4 border-danger-500',
-                default   => 'border-l-4 border-warning-500',
+                'lunas'       => 'border-l-4 border-success-500',
+                'batal'       => 'border-l-4 border-danger-500',
+                default       => 'border-l-4 border-warning-500',
             })
-            ->recordClasses(fn () => 'border-l-4 border-primary-500')
-
             ->headerActions([
                 Tables\Actions\Action::make('kasir')
                     ->label('Buka Kasir')
                     ->icon('heroicon-o-calculator')
-                    ->color('gray')
+                    ->color('primary')
                     ->url(url('/kasir')),
 
                 Tables\Actions\CreateAction::make()
                     ->label('Pemesanan Baru')
                     ->icon('heroicon-o-plus-circle'),
-                    ->color('primary')
-                    ->url(url('/kasir')),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('Status')
+                    ->label('Status Pembayaran')
                     ->options([
-                        'pending' => 'Pending',
-                        'selesai' => 'Selesai',
-                        'batal'   => 'Batal',
+                        'belum_lunas' => 'Belum Lunas',
+                        'lunas'       => 'Lunas',
+                        'batal'       => 'Batal',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('status_pesanan')
+                    ->label('Status Pesanan')
+                    ->options([
+                        'diproses'   => 'Sedang Dimasak',
+                        'diantarkan' => 'Sudah Diantarkan',
+                        'selesai'    => 'Selesai',
                     ]),
 
                 Tables\Filters\SelectFilter::make('sumber')
@@ -364,16 +330,7 @@ class PemesananResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->icon('heroicon-o-pencil-square'),
-                Tables\Actions\DeleteAction::make()
-                    ->icon('heroicon-o-trash'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-                // ✅ Tandai Lunas Cash — muncul kalau belum lunas
+                // ✅ Tandai Lunas Cash
                 Tables\Actions\Action::make('lunas_cash')
                     ->label('Tandai Lunas (Cash)')
                     ->icon('heroicon-o-banknotes')
@@ -384,23 +341,21 @@ class PemesananResource extends Resource
                     ->modalDescription('Pastikan pembayaran cash sudah diterima sebelum mengkonfirmasi.')
                     ->action(function ($record) {
                         $record->update(['status' => 'lunas']);
-
-                        // ✅ Trigger jurnal otomatis kalau belum dibuat
                         if (!$record->jurnal_dibuat) {
                             JurnalService::jurnalPenjualan($record);
                             $record->update(['jurnal_dibuat' => true]);
                         }
                     }),
 
-                // ✅ Tombol ubah status pesanan
+                // ✅ Tombol status pesanan
                 Tables\Actions\Action::make('diantarkan')
                     ->label('Sudah Diantarkan')
                     ->icon('heroicon-o-truck')
                     ->color('info')
                     ->visible(fn ($record) => $record->status_pesanan === 'diproses')
                     ->requiresConfirmation()
-                    ->modalHeading('Konfirmasi Pesanan Telah Diantar')  // ✅ judul popup
-                    ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.') // ✅ ubah teks ini
+                    ->modalHeading('Konfirmasi Pesanan Telah Diantar')
+                    ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.')
                     ->action(fn ($record) => $record->update(['status_pesanan' => 'diantarkan'])),
 
                 Tables\Actions\Action::make('selesai_pesanan')
@@ -411,8 +366,16 @@ class PemesananResource extends Resource
                     ->requiresConfirmation()
                     ->action(fn ($record) => $record->update(['status_pesanan' => 'selesai'])),
 
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->icon('heroicon-o-pencil-square'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->icon('heroicon-o-trash'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
@@ -425,4 +388,3 @@ class PemesananResource extends Resource
         ];
     }
 }
-//ubah tampilan dan nambahin sesuatu
