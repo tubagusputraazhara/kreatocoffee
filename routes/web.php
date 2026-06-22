@@ -77,3 +77,4 @@ Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPd
 //loginnya biar inget
 
 Route::resource('suppliers', SupplierController::class);
+Route::get('/rekomendasi-menu', [App\Http\Controllers\RekomendasiController::class, 'getRekomendasi'])->name('rekomendasi.menu');

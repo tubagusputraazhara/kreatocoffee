@@ -18,19 +18,9 @@
             overflow: hidden;
         }
 
-        .wrapper {
-            display: flex;
-            height: 100vh;
-        }
+        .wrapper { display: flex; height: 100vh; }
 
-        /* =====================
-            LEFT SIDE
-        ===================== */
-        .left {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-        }
+        .left { flex: 1; padding: 24px; overflow-y: auto; }
 
         .header {
             display: flex;
@@ -42,7 +32,8 @@
         .brand { display: flex; align-items: center; gap: 12px; }
 
         .brand-dot {
-            width: 10px; height: 10px;
+            width: 10px;
+            height: 10px;
             background: #C0392B;
             border-radius: 50%;
         }
@@ -62,7 +53,6 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        /* Form Pemesanan */
         .order-form {
             background: #fff;
             padding: 20px 24px;
@@ -117,7 +107,6 @@
             cursor: not-allowed;
         }
 
-        /* Kategori */
         .kategori-wrap {
             display: flex;
             gap: 8px;
@@ -172,11 +161,7 @@
             overflow: hidden;
         }
 
-        .menu-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .menu-img img { width: 100%; height: 100%; object-fit: cover; }
 
         .menu-body { padding: 14px; }
 
@@ -225,9 +210,6 @@
 
         .btn-add:hover { background: #A93226; }
 
-        /* =====================
-            RIGHT SIDE CART
-        ===================== */
         .right {
             width: 360px;
             background: #fff;
@@ -270,9 +252,7 @@
         }
 
         .cart-name { font-size: 13px; font-weight: 600; color: #2C1A0E; }
-
         .cart-price-info { font-size: 11px; color: #9E8E84; margin-top: 2px; }
-
         .cart-subtotal { font-size: 13px; font-weight: 600; color: #C0392B; }
 
         .qty-wrap {
@@ -308,6 +288,55 @@
             margin-top: 60px;
             font-size: 13px;
             line-height: 2;
+        }
+
+        /* ✅ Rekomendasi di Kasir */
+        .rekomendasi-kasir {
+            padding: 12px 0;
+            border-top: 1px solid #F0E3D5;
+            margin-top: 8px;
+        }
+
+        .rekomendasi-kasir-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #5C4033;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .rekomendasi-kasir-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            background: #FDFAF8;
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        .rekomendasi-kasir-nama {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2C1A0E;
+        }
+
+        .rekomendasi-kasir-harga {
+            font-size: 11px;
+            color: #C0392B;
+        }
+
+        .rekomendasi-kasir-btn {
+            padding: 6px 12px;
+            background: #C0392B;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Poppins';
+            cursor: pointer;
         }
 
         .cart-footer {
@@ -363,7 +392,6 @@
         .btn-pay:hover { background: #A93226; }
         .btn-pay:disabled { background: #D5A49E; cursor: not-allowed; }
 
-        /* Loading overlay */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -391,7 +419,6 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 24px;
@@ -413,13 +440,11 @@
 </head>
 <body>
 
-{{-- Loading Overlay --}}
 <div class="loading-overlay" id="loading-overlay">
     <div class="loading-spinner"></div>
     <p class="loading-text">Memproses pembayaran...</p>
 </div>
 
-{{-- Toast --}}
 <div class="toast" id="toast"></div>
 
 <div class="wrapper">
@@ -427,7 +452,6 @@
     {{-- LEFT --}}
     <div class="left">
 
-        {{-- Header --}}
         <div class="header">
             <div class="brand">
                 <div class="brand-dot"></div>
@@ -439,7 +463,6 @@
             <input type="text" class="search" id="search-input" placeholder="🔍 Cari menu...">
         </div>
 
-        {{-- Form Data Pemesanan --}}
         <div class="order-form">
             <p class="form-title">Data Pemesanan</p>
             <div class="form-grid">
@@ -449,6 +472,7 @@
                         <option value="">Pilih Pelanggan</option>
                         @foreach($pelanggans as $p)
                             <option value="{{ $p->id }}" data-nama="{{ $p->nama_pelanggan }}">
+                                {{ $p->nama_pelanggan }}
                                 #{{ $p->id }} - {{ $p->nama_pelanggan }}
                             </option>
                         @endforeach
@@ -476,8 +500,20 @@
 
         {{-- Kategori --}}
         <div class="kategori-wrap">
-            <button class="kategori-btn active" onclick="filterKategori('Semua', this)">Semua</button>
+            <button class="kategori-btn active" onclick="filterKategori('semua', this)">Semua</button>
             @foreach($menus->keys() as $kategori)
+                <button class="kategori-btn" onclick="filterKategori('{{ Str::slug($kategori) }}', this)">
+                    {{ $kategori }}
+                </button>
+            @endforeach
+        </div>
+
+        <div class="menu-grid" id="menu-grid">
+            @foreach($menus as $kategori => $items)
+                @foreach($items as $menu)
+                    <div class="menu-card"
+                        data-kategori="{{ Str::slug($kategori) }}"
+                        data-nama="{{ strtolower($menu->nama_menu) }}">
                 <button class="kategori-btn" onclick="filterKategori('{{ $kategori }}', this)">{{ $kategori }}</button>
             @endforeach
         </div>
@@ -521,6 +557,12 @@
             <div class="empty">
                 ☕<br>Belum ada pesanan<br>
                 <span style="font-size:11px">Pilih menu di sebelah kiri</span>
+            </div>
+
+            {{-- ✅ Rekomendasi di Kasir --}}
+            <div id="rekomendasi-kasir" class="rekomendasi-kasir" style="display:none;">
+                <p class="rekomendasi-kasir-title">⭐ Rekomendasi Tambahan</p>
+                <div id="rekomendasi-kasir-list"></div>
             </div>
         </div>
 
@@ -639,7 +681,6 @@
 
         if (idx > -1) {
             keranjang[idx].qty += delta;
-
             if (keranjang[idx].qty <= 0) {
                 keranjang.splice(idx, 1);
             }
@@ -648,11 +689,11 @@
         renderKeranjang();
     }
 
-    // =====================
-    // Render keranjang
-    // =====================
     function renderKeranjang() {
         const container  = document.getElementById('cart-items');
+        const countEl    = document.getElementById('cart-count');
+        const subtotalEl = document.getElementById('subtotal');
+        const totalEl    = document.getElementById('total');
         const countEl     = document.getElementById('cart-count');
         const subtotalEl  = document.getElementById('subtotal');
         const totalEl      = document.getElementById('total');
@@ -662,6 +703,10 @@
                 <div class="empty">
                     ☕<br>Belum ada pesanan<br>
                     <span style="font-size:11px">Pilih menu di sebelah kiri</span>
+                </div>
+                <div id="rekomendasi-kasir" class="rekomendasi-kasir" style="display:none;">
+                    <p class="rekomendasi-kasir-title">⭐ Rekomendasi Tambahan</p>
+                    <div id="rekomendasi-kasir-list"></div>
                 </div>`;
             countEl.textContent    = '0 item';
             subtotalEl.textContent = 'Rp 0';
@@ -696,6 +741,13 @@
                     </div>
                 </div>`;
         });
+
+        // ✅ Tambahkan rekomendasi setelah list cart
+        html += `
+            <div id="rekomendasi-kasir" class="rekomendasi-kasir" style="display:none;">
+                <p class="rekomendasi-kasir-title">⭐ Rekomendasi Tambahan</p>
+                <div id="rekomendasi-kasir-list"></div>
+            </div>`;
 
         container.innerHTML    = html;
         countEl.textContent    = keranjang.reduce((s, i) => s + i.qty, 0) + ' item';
@@ -746,17 +798,74 @@
 
         if (keranjang.length === 0) return showToast('Keranjang masih kosong!', 'error');
 
-        document.getElementById('modal-pilihan-metode').style.display = 'flex';
-        document.getElementById('metode-pembayaran').value = 'qris';
-        document.getElementById('form-cash-detail').style.display = 'none';
-        document.getElementById('cash-input-bayar').value = '';
-        document.getElementById('cash-text-kembalian').innerText = 'Rp 0';
+        fetchRekomendasiKasir(); // ✅
     }
 
-    function tutupModalMetode() {
-        document.getElementById('modal-pilihan-metode').style.display = 'none';
+    // ✅ Fetch rekomendasi untuk kasir
+    function fetchRekomendasiKasir() {
+        const cartNames = keranjang.map(i => i.nama);
+
+        if (cartNames.length === 0) {
+            const section = document.getElementById('rekomendasi-kasir');
+            if (section) section.style.display = 'none';
+            return;
+        }
+
+        const params = cartNames.map(n => `items[]=${encodeURIComponent(n)}`).join('&');
+
+        fetch(`/rekomendasi-menu?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const section = document.getElementById('rekomendasi-kasir');
+                const list    = document.getElementById('rekomendasi-kasir-list');
+
+                if (!section || !list) return;
+
+                if (data.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                list.innerHTML = data.map(item => `
+                    <div class="rekomendasi-kasir-item">
+                        <div>
+                            <p class="rekomendasi-kasir-nama">${item.nama_menu}</p>
+                            <p class="rekomendasi-kasir-harga">
+                                Rp ${Number(item.harga).toLocaleString('id-ID')}
+                                <span style="color:#9E8E84; font-size:10px;">
+                                    · ${item.confidence}
+                                </span>
+                            </p>
+                        </div>
+                        <button class="rekomendasi-kasir-btn"
+                            onclick="addToCart('${item.id_menu}', '${item.nama_menu}', ${item.harga})">
+                            + Tambah
+                        </button>
+                    </div>
+                `).join('');
+            });
     }
 
+    function filterKategori(slug, btn) {
+        document.querySelectorAll('.kategori-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.style.display = (slug === 'semua' || card.dataset.kategori === slug) ? '' : 'none';
+        });
+    }
+
+    document.getElementById('search-input').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.menu-card').forEach(card => {
+            card.style.display = card.dataset.nama.includes(q) ? '' : 'none';
+        });
+    });
+
+    function prosesBayar() {
+        const nama    = document.getElementById('input-nama').value;
+        const meja    = document.getElementById('select-meja').value;
+        const catatan = document.getElementById('input-catatan').value;
     function toggleFormCash() {
         const metode   = document.getElementById('metode-pembayaran').value;
         const formCash = document.getElementById('form-cash-detail');
@@ -875,6 +984,9 @@
                         resetForm();
                     });
                 },
+                onPending: function() { showToast('Menunggu pembayaran...', ''); },
+                onError:   function() { showToast('Pembayaran gagal!', 'error'); },
+                onClose:   function() { showToast('Popup ditutup sebelum selesai.', 'error'); }
                 onPending: function () {
                     showToast('Menunggu pembayaran...', '');
                 },
@@ -963,6 +1075,7 @@
         const toast = document.getElementById('toast');
         toast.textContent = msg;
         toast.className   = 'toast ' + type + ' show';
+        setTimeout(() => toast.classList.remove('show'), 3000);
 
         setTimeout(() => {
             toast.classList.remove('show');
@@ -973,6 +1086,7 @@
         document.getElementById('modal-qris').style.display = 'none';
     }
 </script>
+
 </body>
 </html>
 //biar data masuk ke pemesanan
