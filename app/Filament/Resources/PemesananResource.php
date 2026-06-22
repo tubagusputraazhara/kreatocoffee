@@ -169,6 +169,8 @@ class PemesananResource extends Resource
                     ->color('info')
                     ->visible(fn ($record) => $record->status_pesanan === 'diproses')
                     ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Pesanan Telah Diantar')  // ✅ judul popup
+                    ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.') // ✅ ubah teks ini
                     ->action(fn ($record) => $record->update(['status_pesanan' => 'diantarkan'])),
 
                 Tables\Actions\Action::make('selesai_pesanan')
