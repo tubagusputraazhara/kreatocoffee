@@ -15,8 +15,9 @@ Route::get('/', function () {
     return redirect('/kasir');
 });
 
-// ROUTE AUTH UNTUK LOGOUT
+// ROUTE AUTH UNTUK LOGOUT (TIDAK DIUBAH)
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
 
 // =========================
 // CUSTOMER QR ORDERING
@@ -27,10 +28,8 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::get('/menu', [OrderingController::class, 'menu'])->name('menu');
     Route::post('/add-to-cart', [OrderingController::class, 'addToCart'])->name('addToCart');
     Route::post('/remove-from-cart', [OrderingController::class, 'removeFromCart'])->name('removeFromCart');
-    Route::post('/update-cart', [OrderingController::class, 'updateCart'])->name('updateCart');
     Route::get('/checkout', [OrderingController::class, 'checkout'])->name('checkout');
     Route::post('/payment', [OrderingController::class, 'payment'])->name('payment');
-    Route::post('/update-status', [OrderingController::class, 'updateStatus'])->name('updateStatus');
     Route::get('/success', [OrderingController::class, 'success'])->name('success');
 });
 
@@ -42,7 +41,7 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     // Alamat utama kasir
     Route::get('/', [KasirController::class, 'index'])->name('index');
 
-    // Proses submit form login (action form mengarah ke rute kasir)
+    // Proses submit form login diletakkan di sini agar action form mengarah ke rute kasir
     Route::post('/login-proses', [AuthController::class, 'login'])->name('login-proses');
 
     Route::post('/simpan-pesanan', [PesananController::class, 'simpan'])->name('simpan');
@@ -51,21 +50,13 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
     Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
     Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
-    Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
-    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
+
+    // Catatan: nama rute 'payment' diarahkan ke method paymentSuccess() pada KasirController
+    Route::post('/payment', [KasirController::class, 'paymentSuccess'])->name('payment');
 
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
 });
-// =========================
-// KASIR POS
-// =========================
-Route::prefix('kasir')->name('kasir.')->group(function () {
-    Route::get('/', [KasirController::class, 'index'])->name('index');
-    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
-    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
-    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
-    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
-});
+
 
 // =========================
 // MIDTRANS CALLBACK
@@ -83,6 +74,7 @@ Route::get('/jurnal/export/pdf', [JurnalExportController::class, 'exportPdf'])
 Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPdf'])
     ->name('pemesanan.export.pdf')
     ->middleware('auth');
+//loginnya biar inget
 
 Route::resource('suppliers', SupplierController::class);
 Route::get('/rekomendasi-menu', [App\Http\Controllers\RekomendasiController::class, 'getRekomendasi'])->name('rekomendasi.menu');
