@@ -6,6 +6,7 @@ use App\Http\Controllers\PesananController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\JurnalExportController;
 use App\Http\Controllers\PemesananExportController;
+use App\Http\Controllers\SupplierController;
 
 // =========================================================================
 // ROUTE UTAMA (http://127.0.0.1:8000/) - LANGSUNG OPER KE KASIR
@@ -19,7 +20,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
 // =========================
-// CUSTOMER QR ORDERING (TIDAK DIUBAH)
+// CUSTOMER QR ORDERING
 // =========================
 Route::prefix('order')->name('order.')->group(function () {
     Route::get('/', [OrderingController::class, 'index'])->name('index');
@@ -32,9 +33,8 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::get('/success', [OrderingController::class, 'success'])->name('success');
 });
 
-
 // =========================================================================
-// KASIR POS (MIDDLEWARE AUTH DIHAPUS AGAR URL TETAP DIAM DI /kasir)
+// KASIR POS
 // =========================================================================
 Route::prefix('kasir')->name('kasir.')->group(function () {
 
@@ -75,3 +75,5 @@ Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPd
     ->name('pemesanan.export.pdf')
     ->middleware('auth');
 //loginnya biar inget
+
+Route::resource('suppliers', SupplierController::class);

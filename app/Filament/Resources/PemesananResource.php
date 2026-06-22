@@ -6,6 +6,7 @@ use App\Filament\Resources\PemesananResource\Pages;
 use App\Models\Pemesanan;
 use App\Models\Pelanggan;
 use App\Models\Menu;
+use App\Services\JurnalService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
@@ -20,7 +21,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\Layout\Stack;
 
 class PemesananResource extends Resource
 {
@@ -178,6 +178,28 @@ class PemesananResource extends Resource
                             ->columnSpanFull(),
                     ]),
             ]);
+        return $form->schema([
+            Forms\Components\TextInput::make('kode_pemesanan')->readOnly(),
+            Forms\Components\TextInput::make('nama_pemesan')->required(),
+            Forms\Components\Select::make('no_meja')
+                ->options(collect(range(1, 30))->mapWithKeys(fn ($i) => [$i => 'Meja ' . $i])),
+            Forms\Components\TextInput::make('total_harga')->prefix('Rp')->numeric(),
+            Forms\Components\Select::make('status')
+                ->label('Status Pembayaran')
+                ->options([
+                    'belum_lunas' => 'Belum Lunas',
+                    'lunas'       => 'Lunas',
+                    'batal'       => 'Batal',
+                ]),
+            Forms\Components\Select::make('status_pesanan')
+                ->label('Status Pesanan')
+                ->options([
+                    'diproses'   => 'Sedang Dimasak',
+                    'diantarkan' => 'Sudah Diantarkan',
+                    'selesai'    => 'Selesai',
+                ]),
+            Forms\Components\Textarea::make('catatan')->columnSpanFull(),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -205,6 +227,24 @@ class PemesananResource extends Resource
                         ->size('sm')
                         ->color('gray'),
                 ])->space(2),
+                TextColumn::make('id_pemesanan')
+                    ->label('ID')
+                    ->sortable(),
+
+                TextColumn::make('kode_pemesanan')
+                    ->label('Kode')
+                    ->weight('bold')
+                    ->color('primary')
+                    ->searchable(),
+
+                TextColumn::make('no_meja')
+                    ->label('No Meja')
+                    ->getStateUsing(fn ($record) => $record->no_meja ?? '-')
+                    ->sortable(),
+
+                TextColumn::make('nama_pemesan')
+                    ->label('Pelanggan')
+                    ->searchable(),
 
                 TextColumn::make('details_summary')
                     ->label('Item Pesanan')
@@ -227,8 +267,26 @@ class PemesananResource extends Resource
                     ->color('success')
                     ->alignEnd(),
 
+                // ✅ Status pembayaran
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label('Pembayaran')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'belum_lunas' => 'warning',
+                        'lunas'       => 'success',
+                        'batal'       => 'danger',
+                        default       => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'belum_lunas' => 'Belum Lunas',
+                        'lunas'       => 'Lunas',
+                        'batal'       => 'Batal',
+                        default       => $state,
+                    }),
+
+                // ✅ Status pesanan
+                TextColumn::make('status_pesanan')
+                    ->label('Status Pesanan')
                     ->badge()
                     ->icon(fn ($state) => match ($state) {
                         'pending' => 'heroicon-o-clock',
@@ -237,10 +295,16 @@ class PemesananResource extends Resource
                         default   => 'heroicon-o-question-mark-circle',
                     })
                     ->color(fn ($state) => match ($state) {
-                        'pending' => 'warning',
-                        'selesai' => 'success',
-                        'batal'   => 'danger',
-                        default   => 'gray',
+                        'diproses'   => 'warning',
+                        'diantarkan' => 'info',
+                        'selesai'    => 'success',
+                        default      => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        'diproses'   => 'Sedang Dimasak',
+                        'diantarkan' => 'Sudah Diantarkan',
+                        'selesai'    => 'Selesai',
+                        default      => $state,
                     }),
 
                 TextColumn::make('catatan')
@@ -268,6 +332,8 @@ class PemesananResource extends Resource
                 'batal'   => 'border-l-4 border-danger-500',
                 default   => 'border-l-4 border-warning-500',
             })
+            ->recordClasses(fn () => 'border-l-4 border-primary-500')
+
             ->headerActions([
                 Tables\Actions\Action::make('kasir')
                     ->label('Buka Kasir')
@@ -278,6 +344,8 @@ class PemesananResource extends Resource
                 Tables\Actions\CreateAction::make()
                     ->label('Pemesanan Baru')
                     ->icon('heroicon-o-plus-circle'),
+                    ->color('primary')
+                    ->url(url('/kasir')),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -305,6 +373,46 @@ class PemesananResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+                // ✅ Tandai Lunas Cash — muncul kalau belum lunas
+                Tables\Actions\Action::make('lunas_cash')
+                    ->label('Tandai Lunas (Cash)')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'belum_lunas')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Pembayaran Cash')
+                    ->modalDescription('Pastikan pembayaran cash sudah diterima sebelum mengkonfirmasi.')
+                    ->action(function ($record) {
+                        $record->update(['status' => 'lunas']);
+
+                        // ✅ Trigger jurnal otomatis kalau belum dibuat
+                        if (!$record->jurnal_dibuat) {
+                            JurnalService::jurnalPenjualan($record);
+                            $record->update(['jurnal_dibuat' => true]);
+                        }
+                    }),
+
+                // ✅ Tombol ubah status pesanan
+                Tables\Actions\Action::make('diantarkan')
+                    ->label('Sudah Diantarkan')
+                    ->icon('heroicon-o-truck')
+                    ->color('info')
+                    ->visible(fn ($record) => $record->status_pesanan === 'diproses')
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Pesanan Telah Diantar')  // ✅ judul popup
+                    ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.') // ✅ ubah teks ini
+                    ->action(fn ($record) => $record->update(['status_pesanan' => 'diantarkan'])),
+
+                Tables\Actions\Action::make('selesai_pesanan')
+                    ->label('Selesai')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status_pesanan === 'diantarkan')
+                    ->requiresConfirmation()
+                    ->action(fn ($record) => $record->update(['status_pesanan' => 'selesai'])),
+
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ]);
     }
 
