@@ -85,3 +85,4 @@ Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPd
     ->middleware('auth');
 
 Route::resource('suppliers', SupplierController::class);
+Route::get('/rekomendasi-menu', [App\Http\Controllers\RekomendasiController::class, 'getRekomendasi'])->name('rekomendasi.menu');

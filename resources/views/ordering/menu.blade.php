@@ -4,17 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Pilih Menu — Kreato Coffee</title>
-
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Poppins', sans-serif;
@@ -43,20 +36,10 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(10px);
         }
 
-        .topbar-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .topbar-sub {
-            font-size: 11px;
-            color: rgba(255,255,255,0.75);
-            margin-top: 2px;
-        }
+        .topbar-title { font-size: 16px; font-weight: 600; color: #fff; }
+        .topbar-sub { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 2px; }
 
         .cart-btn {
             background: rgba(255,255,255,0.18);
@@ -95,12 +78,9 @@
             position: sticky;
             top: 64px;
             z-index: 90;
-            backdrop-filter: blur(10px);
         }
 
-        .tabs-wrap::-webkit-scrollbar {
-            display: none;
-        }
+        .tabs-wrap::-webkit-scrollbar { display: none; }
 
         .tab-btn {
             padding: 7px 16px;
@@ -121,13 +101,9 @@
             border-color: #C0392B;
         }
 
-        .content-wrap {
-            padding-bottom: 110px;
-        }
+        .content-wrap { padding-bottom: 110px; }
 
-        .kategori-section {
-            padding: 0 14px 12px;
-        }
+        .kategori-section { padding: 0 14px 12px; }
 
         .kategori-title {
             font-size: 12px;
@@ -152,9 +128,7 @@
             transition: transform 0.15s ease;
         }
 
-        .menu-card:active {
-            transform: scale(0.98);
-        }
+        .menu-card:active { transform: scale(0.98); }
 
         .menu-img {
             width: 100%;
@@ -167,22 +141,11 @@
             overflow: hidden;
         }
 
-        .menu-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .menu-img img { width: 100%; height: 100%; object-fit: cover; }
 
-        .menu-body {
-            padding: 12px;
-        }
+        .menu-body { padding: 12px; }
 
-        .menu-name {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2C1A0E;
-            margin-bottom: 3px;
-        }
+        .menu-name { font-size: 13px; font-weight: 600; color: #2C1A0E; margin-bottom: 3px; }
 
         .menu-desc {
             font-size: 11px;
@@ -191,18 +154,9 @@
             line-height: 1.4;
         }
 
-        .menu-price {
-            font-size: 13px;
-            color: #C0392B;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
+        .menu-price { font-size: 13px; color: #C0392B; font-weight: 600; margin-bottom: 10px; }
 
-        .qty-ctrl {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        .qty-ctrl { display: flex; align-items: center; justify-content: space-between; }
 
         .qty-btn {
             width: 30px;
@@ -220,11 +174,7 @@
             line-height: 1;
         }
 
-        .qty-btn.add {
-            background: #C0392B;
-            border-color: #C0392B;
-            color: #fff;
-        }
+        .qty-btn.add { background: #C0392B; border-color: #C0392B; color: #fff; }
 
         .qty-num {
             font-size: 14px;
@@ -232,6 +182,63 @@
             color: #2C1A0E;
             min-width: 20px;
             text-align: center;
+        }
+
+        /* ✅ Rekomendasi Section */
+        .rekomendasi-wrap {
+            padding: 0 14px 12px;
+        }
+
+        .rekomendasi-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .rekomendasi-scroll::-webkit-scrollbar { display: none; }
+
+        .rekomendasi-card {
+            min-width: 140px;
+            background: #fff;
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+            border: 1.5px solid #F5EDE8;
+        }
+
+        .rekomendasi-nama {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2C1A0E;
+            margin-bottom: 4px;
+        }
+
+        .rekomendasi-harga {
+            font-size: 11px;
+            color: #C0392B;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .rekomendasi-confidence {
+            font-size: 10px;
+            color: #9E8E84;
+            margin-bottom: 8px;
+        }
+
+        .rekomendasi-btn {
+            width: 100%;
+            padding: 6px;
+            background: #C0392B;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
         }
 
         .cart-bar {
@@ -249,20 +256,10 @@
             border-radius: 18px 18px 0 0;
         }
 
-        .cart-bar.visible {
-            display: flex;
-        }
+        .cart-bar.visible { display: flex; }
 
-        .cart-bar-count {
-            font-size: 12px;
-            color: rgba(255,255,255,0.8);
-        }
-
-        .cart-bar-total {
-            font-size: 17px;
-            font-weight: 600;
-            color: #fff;
-        }
+        .cart-bar-count { font-size: 12px; color: rgba(255,255,255,0.8); }
+        .cart-bar-total { font-size: 17px; font-weight: 600; color: #fff; }
 
         .btn-checkout {
             background: #fff;
@@ -285,9 +282,7 @@
             align-items: flex-end;
         }
 
-        .modal-overlay.open {
-            display: flex;
-        }
+        .modal-overlay.open { display: flex; }
 
         .modal {
             background: #fff;
@@ -308,12 +303,7 @@
             margin: 0 auto 16px;
         }
 
-        .modal-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #2C1A0E;
-            margin-bottom: 16px;
-        }
+        .modal-title { font-size: 16px; font-weight: 600; color: #2C1A0E; margin-bottom: 16px; }
 
         .cart-item {
             display: flex;
@@ -324,17 +314,8 @@
             gap: 8px;
         }
 
-        .cart-item-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: #2C1A0E;
-        }
-
-        .cart-item-price {
-            font-size: 11px;
-            color: #9E8E84;
-            margin-top: 2px;
-        }
+        .cart-item-name { font-size: 13px; font-weight: 500; color: #2C1A0E; }
+        .cart-item-price { font-size: 11px; color: #9E8E84; margin-top: 2px; }
 
         .cart-item-right {
             display: flex;
@@ -351,20 +332,9 @@
             text-align: right;
         }
 
-        .modal-footer {
-            margin-top: 16px;
-        }
-
-        .modal-total-label {
-            font-size: 12px;
-            color: #9E8E84;
-        }
-
-        .modal-total-val {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2C1A0E;
-        }
+        .modal-footer { margin-top: 16px; }
+        .modal-total-label { font-size: 12px; color: #9E8E84; }
+        .modal-total-val { font-size: 20px; font-weight: 600; color: #2C1A0E; }
 
         .btn-to-checkout {
             width: 100%;
@@ -388,25 +358,13 @@
         }
 
         @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         @media (min-width: 768px) {
-            body {
-                padding: 20px 0;
-            }
-
-            .app-container {
-                border-radius: 28px;
-                min-height: 95vh;
-            }
+            body { padding: 20px 0; }
+            .app-container { border-radius: 28px; min-height: 95vh; }
         }
     </style>
 </head>
@@ -421,7 +379,6 @@
                 {{ session('no_meja') }} — {{ session('nama_pemesan') }}
             </p>
         </div>
-
         <button class="cart-btn" onclick="toggleModal()">
             🛒 Keranjang
             <span class="cart-badge" id="cart-count">0</span>
@@ -429,13 +386,9 @@
     </div>
 
     <div class="tabs-wrap">
-        <button class="tab-btn active" onclick="filterKategori('semua', this)">
-            Semua
-        </button>
-
+        <button class="tab-btn active" onclick="filterKategori('semua', this)">Semua</button>
         @foreach($menus->keys() as $kategori)
-            <button class="tab-btn"
-                onclick="filterKategori('{{ Str::slug($kategori) }}', this)">
+            <button class="tab-btn" onclick="filterKategori('{{ Str::slug($kategori) }}', this)">
                 {{ $kategori }}
             </button>
         @endforeach
@@ -443,116 +396,70 @@
 
     <div class="content-wrap">
 
+        {{-- ✅ Rekomendasi Menu --}}
+        <div id="rekomendasi-section" class="rekomendasi-wrap" style="display:none;">
+            <p class="kategori-title">⭐ Sering Dipesan Bersama</p>
+            <div class="rekomendasi-scroll" id="rekomendasi-list"></div>
+        </div>
+
         @foreach($menus as $kategori => $items)
-
-            <div class="kategori-section"
-                data-kategori="{{ Str::slug($kategori) }}">
-
+            <div class="kategori-section" data-kategori="{{ Str::slug($kategori) }}">
                 <p class="kategori-title">{{ $kategori }}</p>
-
                 <div class="menu-grid">
-
                     @foreach($items as $menu)
-
                         <div class="menu-card">
-
                             <div class="menu-img">
-
                                 @if($menu->gambar)
-                                    <img
-                                        src="{{ asset('storage/' . $menu->gambar) }}"
-                                        alt="{{ $menu->nama_menu }}"
-                                    >
+                                    <img src="{{ asset('storage/' . $menu->gambar) }}" alt="{{ $menu->nama_menu }}">
                                 @else
                                     ☕
                                 @endif
-
                             </div>
-
                             <div class="menu-body">
-
-                                <p class="menu-name">
-                                    {{ $menu->nama_menu }}
-                                </p>
-
+                                <p class="menu-name">{{ $menu->nama_menu }}</p>
                                 @if($menu->deskripsi)
-                                    <p class="menu-desc">
-                                        {{ Str::limit($menu->deskripsi, 35) }}
-                                    </p>
+                                    <p class="menu-desc">{{ Str::limit($menu->deskripsi, 35) }}</p>
                                 @endif
-
-                                <p class="menu-price">
-                                    Rp {{ number_format($menu->harga, 0, ',', '.') }}
-                                </p>
-
+                                <p class="menu-price">Rp {{ number_format($menu->harga, 0, ',', '.') }}</p>
                                 <div class="qty-ctrl">
-
-                                    <button
-                                        class="qty-btn"
+                                    <button class="qty-btn"
                                         onclick="removeFromCart('{{ $menu->id_menu }}', '{{ addslashes($menu->nama_menu) }}', {{ $menu->harga }})">
                                         −
                                     </button>
-
-                                    <span class="qty-num" id="qty-{{ $menu->id_menu }}">
-                                        0
-                                    </span>
-
-                                    <button
-                                        class="qty-btn add"
+                                    <span class="qty-num" id="qty-{{ $menu->id_menu }}">0</span>
+                                    <button class="qty-btn add"
                                         onclick="addToCart('{{ $menu->id_menu }}', '{{ addslashes($menu->nama_menu) }}', {{ $menu->harga }})">
                                         +
                                     </button>
-
                                 </div>
-
                             </div>
-
                         </div>
-
                     @endforeach
-
                 </div>
-
             </div>
-
         @endforeach
 
     </div>
 
     <div class="cart-bar" id="cart-bar">
-
         <div>
             <p class="cart-bar-count" id="bar-count">0 item</p>
             <p class="cart-bar-total" id="bar-total">Rp 0</p>
         </div>
-
-        <button class="btn-checkout" onclick="goCheckout()">
-            Bayar →
-        </button>
-
+        <button class="btn-checkout" onclick="goCheckout()">Bayar →</button>
     </div>
 
     <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
-
         <div class="modal">
-
             <div class="modal-handle"></div>
-
             <p class="modal-title">🛒 Keranjang Kamu</p>
-
             <div id="modal-items"></div>
-
             <div class="modal-footer">
                 <p class="modal-total-label">Total Pembayaran</p>
                 <p class="modal-total-val" id="modal-total">Rp 0</p>
             </div>
-
-            <button class="btn-to-checkout" onclick="goCheckout()">
-                Lanjut Bayar →
-            </button>
-
+            <button class="btn-to-checkout" onclick="goCheckout()">Lanjut Bayar →</button>
         </div>
-
     </div>
 
 </div>
@@ -564,13 +471,10 @@
     function initCart() {
         Object.entries(cart).forEach(([id, item]) => {
             const el = document.getElementById('qty-' + id);
-
-            if (el) {
-                el.textContent = item.qty;
-            }
+            if (el) el.textContent = item.qty;
         });
-
         updateUI();
+        fetchRekomendasi(); // ✅ load rekomendasi saat halaman dibuka
     }
 
     function addToCart(id, nama, harga) {
@@ -580,30 +484,21 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({
-                id_menu: id,
-                nama_menu: nama,
-                harga: harga
-            })
+            body: JSON.stringify({ id_menu: id, nama_menu: nama, harga: harga })
         })
         .then(r => r.json())
         .then(data => {
             if (data.success) {
                 cart = data.cart;
-
                 const el = document.getElementById('qty-' + id);
-
-                if (el) {
-                    el.textContent = cart[id]?.qty || 0;
-                }
-
+                if (el) el.textContent = cart[id]?.qty || 0;
                 updateUI();
+                fetchRekomendasi(); // ✅
             }
         });
     }
 
     function removeFromCart(id, nama, harga) {
-
         if (!cart[id] || cart[id].qty <= 0) return;
 
         fetch('{{ route("order.removeFromCart") }}', {
@@ -612,144 +507,124 @@
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({
-                id_menu: id,
-                nama_menu: nama,
-                harga: harga
-            })
+            body: JSON.stringify({ id_menu: id, nama_menu: nama, harga: harga })
         })
         .then(r => r.json())
         .then(data => {
-
             if (data.success) {
-
                 cart = data.cart;
-
                 const el = document.getElementById('qty-' + id);
-
-                if (el) {
-                    el.textContent = cart[id]?.qty || 0;
-                }
-
+                if (el) el.textContent = cart[id]?.qty || 0;
                 updateUI();
+                fetchRekomendasi(); // ✅
             }
         });
     }
 
+    // ✅ Fetch rekomendasi dari Apriori
+    function fetchRekomendasi() {
+        const cartNames = Object.values(cart).map(i => i.nama_menu);
+
+        if (cartNames.length === 0) {
+            document.getElementById('rekomendasi-section').style.display = 'none';
+            return;
+        }
+
+        const params = cartNames.map(n => `items[]=${encodeURIComponent(n)}`).join('&');
+
+        fetch(`/rekomendasi-menu?${params}`)
+            .then(r => r.json())
+            .then(data => {
+                const section = document.getElementById('rekomendasi-section');
+                const list    = document.getElementById('rekomendasi-list');
+
+                if (data.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                list.innerHTML = data.map(item => `
+                    <div class="rekomendasi-card">
+                        <p class="rekomendasi-nama">${item.nama_menu}</p>
+                        <p class="rekomendasi-harga">Rp ${Number(item.harga).toLocaleString('id-ID')}</p>
+                        <p class="rekomendasi-confidence">Confidence: ${item.confidence}</p>
+                        <button class="rekomendasi-btn"
+                            onclick="addToCart('${item.id_menu}', '${item.nama_menu}', ${item.harga})">
+                            + Tambah
+                        </button>
+                    </div>
+                `).join('');
+            });
+    }
+
     function updateUI() {
-
         const items = Object.values(cart);
-
         const count = items.reduce((s, i) => s + i.qty, 0);
-
         const total = items.reduce((s, i) => s + (i.harga * i.qty), 0);
 
         document.getElementById('cart-count').textContent = count;
 
         const bar = document.getElementById('cart-bar');
-
         if (count > 0) {
-
             bar.classList.add('visible');
-
-            document.getElementById('bar-count').textContent =
-                count + ' item dipilih';
-
-            document.getElementById('bar-total').textContent =
-                'Rp ' + total.toLocaleString('id-ID');
-
+            document.getElementById('bar-count').textContent = count + ' item dipilih';
+            document.getElementById('bar-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
         } else {
-
             bar.classList.remove('visible');
         }
 
-        document.getElementById('modal-total').textContent =
-            'Rp ' + total.toLocaleString('id-ID');
+        document.getElementById('modal-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
 
         const container = document.getElementById('modal-items');
-
         if (items.length === 0) {
-
-            container.innerHTML =
-                '<p class="empty-cart">Keranjang masih kosong ☕</p>';
-
+            container.innerHTML = '<p class="empty-cart">Keranjang masih kosong ☕</p>';
         } else {
-
             container.innerHTML = items.map(item => `
                 <div class="cart-item">
-
                     <div style="flex:1">
                         <p class="cart-item-name">${item.nama_menu}</p>
-                        <p class="cart-item-price">
-                            Rp ${Number(item.harga).toLocaleString('id-ID')}
-                        </p>
+                        <p class="cart-item-price">Rp ${Number(item.harga).toLocaleString('id-ID')}</p>
                     </div>
-
                     <div class="cart-item-right">
-
                         <button class="qty-btn"
-                            onclick="removeFromCart('${item.id_menu}','${item.nama_menu}',${item.harga})">
-                            −
-                        </button>
-
+                            onclick="removeFromCart('${item.id_menu}','${item.nama_menu}',${item.harga})">−</button>
                         <span class="qty-num">${item.qty}</span>
-
                         <button class="qty-btn add"
-                            onclick="addToCart('${item.id_menu}','${item.nama_menu}',${item.harga})">
-                            +
-                        </button>
-
+                            onclick="addToCart('${item.id_menu}','${item.nama_menu}',${item.harga})">+</button>
                         <span class="cart-item-total">
                             Rp ${(item.harga * item.qty).toLocaleString('id-ID')}
                         </span>
-
                     </div>
-
                 </div>
             `).join('');
         }
     }
 
     function filterKategori(slug, btn) {
-
-        document.querySelectorAll('.tab-btn')
-            .forEach(b => b.classList.remove('active'));
-
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-
-        document.querySelectorAll('.kategori-section')
-            .forEach(sec => {
-
-                sec.style.display =
-                    (slug === 'semua' || sec.dataset.kategori === slug)
-                    ? ''
-                    : 'none';
-            });
+        document.querySelectorAll('.kategori-section').forEach(sec => {
+            sec.style.display = (slug === 'semua' || sec.dataset.kategori === slug) ? '' : 'none';
+        });
     }
 
     function toggleModal() {
         updateUI();
-
-        document.getElementById('modal-overlay')
-            .classList.toggle('open');
+        document.getElementById('modal-overlay').classList.toggle('open');
     }
 
     function closeModalOutside(e) {
-
         if (e.target === document.getElementById('modal-overlay')) {
-
-            document.getElementById('modal-overlay')
-                .classList.remove('open');
+            document.getElementById('modal-overlay').classList.remove('open');
         }
     }
 
     function goCheckout() {
-
         if (Object.keys(cart).length === 0) {
             alert('Keranjang masih kosong!');
             return;
         }
-
         window.location.href = '{{ route("order.checkout") }}';
     }
 
