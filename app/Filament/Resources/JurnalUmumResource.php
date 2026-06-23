@@ -5,6 +5,11 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\JurnalUmumResource\Pages;
 use App\Models\JurnalUmum;
 
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section;
+
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -27,6 +32,33 @@ class JurnalUmumResource extends Resource
     public static function form(\Filament\Forms\Form $form): \Filament\Forms\Form
     {
         return $form->schema([]);
+    }
+
+    // ✅ Infolist untuk modal View
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Section::make('Informasi Jurnal')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('nomor_jurnal')->label('Nomor Jurnal'),
+                    TextEntry::make('tanggal_jurnal')->label('Tanggal')->date('d M Y'),
+                    TextEntry::make('ref')->label('Referensi')->badge()->color('info'),
+                    TextEntry::make('keterangan')->label('Keterangan')->columnSpanFull(),
+                ]),
+
+            Section::make('Detail Jurnal')
+                ->schema([
+                    RepeatableEntry::make('detailJurnal')
+                        ->label('')
+                        ->columns(3)
+                        ->schema([
+                            TextEntry::make('coa.nama_akun')->label('Akun'),
+                            TextEntry::make('debit')->label('Debit')->money('IDR')->color('success'),
+                            TextEntry::make('kredit')->label('Kredit')->money('IDR')->color('danger'),
+                        ]),
+                ]),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -73,16 +105,16 @@ class JurnalUmumResource extends Resource
                     ->color('danger'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                // ✅ ViewAction otomatis jadi modal karena route 'view' dihapus dari getPages()
+                Tables\Actions\ViewAction::make()
+                    ->modalWidth('4xl'),
             ])
             ->bulkActions([]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            \App\Filament\Resources\JurnalUmumResource\RelationManagers\DetailJurnalRelationManager::class,
-        ];
+        return [];
     }
 
     public static function canCreate(): bool { return false; }
@@ -93,7 +125,7 @@ class JurnalUmumResource extends Resource
     {
         return [
             'index' => Pages\ListJurnalUmums::route('/'),
-            'view'  => Pages\ViewJurnalUmum::route('/{record}'),
+            // ✅ Route 'view' dihapus → ViewAction otomatis jadi modal
         ];
     }
 }

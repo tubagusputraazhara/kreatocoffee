@@ -20,6 +20,7 @@ class BiayaOperasionalResource extends Resource
     protected static ?string $model = BiayaOperasional::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+    protected static ?string $navigationLabel = 'Biaya Operasional';
     protected static ?string $navigationGroup = 'Transaksi';
 
     public static function form(Form $form): Form
@@ -27,7 +28,7 @@ class BiayaOperasionalResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make('Biaya Operasional')
-                    ->description('')
+                    ->description('Catat seluruh pengeluaran operasional café.')
                     ->schema([
                         Forms\Components\DatePicker::make('tgl_biaya')
                             ->label('Tanggal Transaksi')
@@ -36,63 +37,122 @@ class BiayaOperasionalResource extends Resource
 
                         Forms\Components\TextInput::make('nama_biaya')
                             ->label('Keterangan Biaya')
-                            ->placeholder('Contoh: Biaya Listrik atau Pembelian Bahan Baku')
-                            ->required(),
+                            ->placeholder('Contoh: Biaya listrik, gas, pembelian bahan baku')
+                            ->required()
+                            ->maxLength(255),
 
                         Forms\Components\Select::make('id_karyawan')
-                            ->label('Karyawan/PIC')
+                            ->label('Karyawan / PIC')
                             ->relationship('karyawan', 'nama')
                             ->searchable()
                             ->preload()
                             ->required(),
 
                         Forms\Components\TextInput::make('jumlah_biaya')
-                            ->label('Nominal (Rp)')
+                            ->label('Nominal')
                             ->numeric()
                             ->prefix('Rp')
                             ->required(),
 
                         Forms\Components\FileUpload::make('bukti_bayar')
-                            ->label('Foto Bukti/Struk')
+                            ->label('Foto Bukti / Struk')
                             ->image()
                             ->directory('biaya-operasional'),
 
                         Forms\Components\Textarea::make('keterangan')
                             ->label('Catatan Tambahan')
+                            ->placeholder('Opsional')
                             ->columnSpanFull(),
-                    ])->columns(2)
+                    ])
+                    ->columns(2),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Daftar Biaya Operasional')
+            ->description('Kelola data pengeluaran operasional café.')
+            ->searchPlaceholder('Cari keterangan biaya / PIC...')
+            ->emptyStateHeading('Belum ada data biaya operasional')
+            ->emptyStateDescription('Data biaya operasional akan muncul setelah ada transaksi yang dicatat.')
+            ->defaultSort('tgl_biaya', 'desc')
+
             ->columns([
                 Tables\Columns\TextColumn::make('tgl_biaya')
                     ->label('Tanggal')
-                    ->date()
-                    ->sortable(),
+                    ->date('d M Y')
+                    ->sortable()
+                    ->description(fn ($record) => \Carbon\Carbon::parse($record->tgl_biaya)->diffForHumans()),
 
                 Tables\Columns\TextColumn::make('nama_biaya')
                     ->label('Keterangan Biaya')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->description(fn ($record) => $record->keterangan ?: 'Tidak ada catatan tambahan'),
 
                 Tables\Columns\TextColumn::make('karyawan.nama')
-                    ->label('PIC'),
+                    ->label('PIC')
+                    ->searchable()
+                    ->badge()
+                    ->color('info'),
 
                 Tables\Columns\TextColumn::make('jumlah_biaya')
                     ->label('Total Nominal')
                     ->money('IDR')
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('bold')
+                    ->color('danger'),
 
                 Tables\Columns\ImageColumn::make('bukti_bayar')
-                    ->label('Bukti'),
+                    ->label('Bukti')
+                    ->square(),
             ])
-            ->filters([])
+
+            ->filters([
+                Tables\Filters\Filter::make('hari_ini')
+                    ->label('Hari ini')
+                    ->query(fn ($query) => $query->whereDate('tgl_biaya', now())),
+
+                Tables\Filters\Filter::make('minggu_ini')
+                    ->label('Minggu ini')
+                    ->query(fn ($query) => $query->whereBetween('tgl_biaya', [
+                        now()->startOfWeek(),
+                        now()->endOfWeek(),
+                    ])),
+
+                Tables\Filters\Filter::make('bulan_ini')
+                    ->label('Bulan ini')
+                    ->query(fn ($query) => $query->whereMonth('tgl_biaya', now()->month)
+                        ->whereYear('tgl_biaya', now()->year)),
+            ])
+
             ->headerActions([
-                // tombol export csv dan excel
-                ExportAction::make()->exporter(BiayaOperasionalExporter::class)->color('success'),
-                // tombol unduh PDF
+                ExportAction::make()
+                    ->exporter(BiayaOperasionalExporter::class)
+                    ->label('Export Excel')
+                    ->color('success'),
+
+                Action::make('previewPdf')
+                    ->label('Lihat PDF')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->modalHeading('Preview Daftar Biaya Operasional')
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->modalContent(function () {
+                        $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
+                        $pdf = Pdf::loadView('pdf.BiayaOperasional', [
+                            'biayaOperasionals' => $biayaOperasionals
+                        ])->setPaper('a4', 'portrait');
+
+                        $base64 = base64_encode($pdf->output());
+
+                        return view('filament.modals.pdf-preview', ['base64' => $base64]);
+                    }),
+
                 Action::make('downloadPdf')
                     ->label('Unduh PDF')
                     ->icon('heroicon-o-document-arrow-down')
@@ -101,23 +161,29 @@ class BiayaOperasionalResource extends Resource
                         $biayaOperasionals = BiayaOperasional::with('karyawan')->get();
                         $pdf = Pdf::loadView('pdf.BiayaOperasional', [
                             'biayaOperasionals' => $biayaOperasionals
-                        ]);
+                        ])->setPaper('a4', 'portrait');
+
                         return response()->streamDownload(
                             fn () => print($pdf->output()),
                             'daftar-biaya-operasional.pdf'
                         );
-                    })
+                    }),
             ])
+
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Edit'),
+
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus'),
             ])
+
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-                // tambahan export excel bulk
-                ExportBulkAction::make()->exporter(BiayaOperasionalExporter::class)
+                ExportBulkAction::make()
+                    ->exporter(BiayaOperasionalExporter::class),
             ]);
     }
 

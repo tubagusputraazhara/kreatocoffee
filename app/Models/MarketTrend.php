@@ -23,3 +23,5 @@ class MarketTrend extends Model
         'referensi_visual' => 'array',
     ];
 }
+
+

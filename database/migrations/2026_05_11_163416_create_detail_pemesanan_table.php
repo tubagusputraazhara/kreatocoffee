@@ -1,3 +1,5 @@
+CREATE DETAIL PEMESANAN
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;

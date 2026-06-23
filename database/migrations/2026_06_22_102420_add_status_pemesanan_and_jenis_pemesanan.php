@@ -1,3 +1,5 @@
+ADD STATUS PEMESANAN
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
