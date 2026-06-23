@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\JurnalService;
 use Midtrans\Config;
+use Midtrans\CoreApi;
 use Midtrans\Snap;
+use Midtrans\Transaction;
 use Midtrans\Notification;
 
 class KasirController extends Controller
@@ -87,7 +89,10 @@ class KasirController extends Controller
             return response()->json(['success' => false, 'message' => 'Pelanggan belum dipilih'], 422);
         }
 
-        if (empty($request->meja)) {
+        // 'dine_in' (makan di tempat, wajib pilih meja) atau 'take_away' (dibawa pulang, tanpa meja)
+        $jenisPemesanan = $request->input('jenis_pemesanan', 'dine_in');
+
+        if ($jenisPemesanan === 'dine_in' && empty($request->meja)) {
             return response()->json(['success' => false, 'message' => 'Meja belum dipilih'], 422);
         }
 
@@ -95,22 +100,28 @@ class KasirController extends Controller
 
         // Catatan metode pembayaran ikut disisipkan di kolom `catatan`,
         // karena tabel pemesanan saat ini belum punya kolom metode_pembayaran tersendiri.
-        $labelMetode  = $metode === 'cash' ? 'CASH' : 'QRIS';
+        $labelMetode  = match ($metode) {
+            'cash'  => 'CASH',
+            'debit' => 'DEBIT/KARTU',
+            default => 'QRIS',
+        };
         $catatanFinal = trim('[' . $labelMetode . '] ' . ($request->catatan ?? ''));
 
         try {
-            $pemesanan = DB::transaction(function () use ($request, $items, $metode, $catatanFinal) {
+            $pemesanan = DB::transaction(function () use ($request, $items, $metode, $catatanFinal, $jenisPemesanan) {
                 $kodePemesanan = Pemesanan::generateKode();
                 $total         = collect($items)->sum(fn($i) => $i['harga'] * $i['qty']);
 
                 $pemesanan = Pemesanan::create([
-                    'kode_pemesanan' => $kodePemesanan,
-                    'nama_pemesan'   => $request->nama_pelanggan,
-                    'no_meja'        => $request->meja,
-                    'sumber'         => 'kasir',
-                    'total_harga'    => $total,
-                    'status'         => $metode === 'cash' ? 'selesai' : 'pending',
-                    'catatan'        => $catatanFinal,
+                    'kode_pemesanan'    => $kodePemesanan,
+                    'nama_pemesan'      => $request->nama_pelanggan,
+                    'jenis_pemesanan'   => $jenisPemesanan,
+                    'no_meja'           => $jenisPemesanan === 'dine_in' ? $request->meja : null,
+                    'sumber'            => 'kasir',
+                    'total_harga'       => $total,
+                    // status: pending -> selesai -> batal (kolom lama, dipakai sebagai status pembayaran)
+                    'status' => $metode === 'cash' ? 'selesai' : 'pending',
+                    'catatan'           => $catatanFinal,
                 ]);
 
                 foreach ($items as $item) {
@@ -148,20 +159,56 @@ class KasirController extends Controller
             ]);
         }
 
-        // Pembayaran QRIS lewat Midtrans Snap
+        // Pembayaran Debit/Kartu (atau VA, dll) lewat Midtrans Snap (popup dengan banyak pilihan metode)
+        if ($metode === 'debit') {
+            try {
+                $this->setupMidtrans();
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id'     => $pemesanan->kode_pemesanan,
+                        'gross_amount' => (int) $pemesanan->total_harga,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $pemesanan->nama_pemesan,
+                    ],
+                    'item_details' => collect($items)->map(fn($item) => [
+                        'id'       => $item['id'],
+                        'price'    => (int) $item['harga'],
+                        'quantity' => (int) $item['qty'],
+                        'name'     => substr($item['nama'], 0, 50), // Midtrans max 50 char
+                    ])->values()->toArray(),
+                ];
+
+                $snapToken = Snap::getSnapToken($params);
+            } catch (\Throwable $e) {
+                report($e);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal membuat transaksi Snap: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            session(['kasir_pemesanan_id' => $pemesanan->id_pemesanan]);
+
+            return response()->json([
+                'success'    => true,
+                'metode'     => 'debit',
+                'order_id'   => $pemesanan->kode_pemesanan,
+                'snap_token' => $snapToken,
+            ]);
+        }
+
+        // Pembayaran QRIS lewat Midtrans Core API (QR ditampilkan langsung, tanpa popup Snap)
         try {
-            Config::$serverKey    = env('MIDTRANS_SERVER_KEY');
-            Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-            Config::$isSanitized  = true;
-            Config::$is3ds        = true;
+            $this->setupMidtrans();
 
             $params = [
+                'payment_type' => 'qris',
                 'transaction_details' => [
                     'order_id'     => $pemesanan->kode_pemesanan,
                     'gross_amount' => (int) $pemesanan->total_harga,
-                ],
-                'customer_details' => [
-                    'first_name' => $pemesanan->nama_pemesan,
                 ],
                 'item_details' => collect($items)->map(fn($item) => [
                     'id'       => $item['id'],
@@ -169,9 +216,29 @@ class KasirController extends Controller
                     'quantity' => (int) $item['qty'],
                     'name'     => substr($item['nama'], 0, 50), // Midtrans max 50 char
                 ])->values()->toArray(),
+                'customer_details' => [
+                    'first_name' => $pemesanan->nama_pemesan,
+                ],
             ];
 
-            $snapToken = Snap::getSnapToken($params);
+            $charge = CoreApi::charge($params);
+
+            // Respons Midtrans bisa berbentuk object atau array tergantung versi library,
+            // jadi kita normalisasi dulu ke array supaya aman diakses.
+            $chargeArr = is_array($charge) ? $charge : json_decode(json_encode($charge), true);
+
+            // Cari URL gambar QR dari response actions
+            $qrUrl = null;
+            foreach (($chargeArr['actions'] ?? []) as $action) {
+                if (($action['name'] ?? null) === 'generate-qr-code') {
+                    $qrUrl = $action['url'];
+                    break;
+                }
+            }
+
+            if (!$qrUrl) {
+                throw new \Exception('URL QRIS tidak ditemukan pada respons Midtrans.');
+            }
         } catch (\Throwable $e) {
             report($e);
 
@@ -181,16 +248,59 @@ class KasirController extends Controller
             ], 500);
         }
 
-        session([
-            'kasir_snap_token'   => $snapToken,
-            'kasir_pemesanan_id' => $pemesanan->id_pemesanan,
-        ]);
+        session(['kasir_pemesanan_id' => $pemesanan->id_pemesanan]);
 
         return response()->json([
-            'success'    => true,
-            'metode'     => 'qris',
-            'snap_token' => $snapToken,
-            'order_id'   => $pemesanan->kode_pemesanan,
+            'success'  => true,
+            'metode'   => 'qris',
+            'order_id' => $pemesanan->kode_pemesanan,
+            'qr_url'   => $qrUrl,
+            'total'    => (int) $pemesanan->total_harga,
+        ]);
+    }
+
+    /**
+     * Dipanggil berkala (polling) oleh frontend untuk mengecek status pembayaran QRIS.
+     * Route: GET /kasir/check-status/{orderId}
+     */
+    public function checkStatus(string $orderId)
+    {
+        try {
+            $this->setupMidtrans();
+
+            $status = Transaction::status($orderId);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengecek status: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        $statusArr          = is_array($status) ? $status : json_decode(json_encode($status), true);
+        $transactionStatus  = $statusArr['transaction_status'] ?? null;
+        $fraudStatus        = $statusArr['fraud_status'] ?? null;
+
+        $pemesanan  = Pemesanan::where('kode_pemesanan', $orderId)->first();
+        $sudahLunas = false;
+
+        if ($pemesanan && in_array($transactionStatus, ['capture', 'settlement'])) {
+            if ($fraudStatus === 'accept' || $fraudStatus === null) {
+                if ($pemesanan->status !== 'selesai') {
+                    $pemesanan->update(['status' => 'selesai']);
+                    $this->buatJurnalAman($pemesanan);
+                }
+                $sudahLunas = true;
+            }
+        } elseif ($pemesanan && in_array($transactionStatus, ['deny', 'expire', 'cancel'])) {
+            $pemesanan->update(['status' => 'batal']);
+        }
+
+        return response()->json([
+            'success'            => true,
+            'transaction_status' => $transactionStatus,
+            'lunas'              => $sudahLunas,
         ]);
     }
 
@@ -208,7 +318,7 @@ class KasirController extends Controller
             $this->buatJurnalAman($pemesanan);
         }
 
-        session()->forget(['kasir_cart', 'kasir_snap_token', 'kasir_pemesanan_id']);
+        session()->forget(['kasir_cart', 'kasir_pemesanan_id']);
 
         return response()->json(['success' => true]);
     }
@@ -219,10 +329,7 @@ class KasirController extends Controller
      */
     public function midtransCallback(Request $request)
     {
-        Config::$serverKey    = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized  = true;
-        Config::$is3ds        = true;
+        $this->setupMidtrans();
 
         $notif = new Notification();
 
@@ -251,6 +358,17 @@ class KasirController extends Controller
     }
 
     /**
+     * Konfigurasi Midtrans, dipanggil sebelum request apapun ke Midtrans.
+     */
+    private function setupMidtrans(): void
+    {
+        Config::$serverKey    = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
+    }
+
+    /**
      * Panggil jurnal otomatis tanpa membuat checkout gagal kalau service ini error.
      */
     private function buatJurnalAman(Pemesanan $pemesanan): void
@@ -262,4 +380,3 @@ class KasirController extends Controller
         }
     }
 }
-//biar bagus

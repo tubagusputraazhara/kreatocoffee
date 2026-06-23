@@ -54,6 +54,9 @@ Route::prefix('kasir')->name('kasir.')->group(function () {
     // Catatan: nama rute 'payment' diarahkan ke method paymentSuccess() pada KasirController
     Route::post('/payment', [KasirController::class, 'paymentSuccess'])->name('payment');
 
+    // Polling status pembayaran QRIS (Core API)
+    Route::get('/check-status/{orderId}', [KasirController::class, 'checkStatus'])->name('checkStatus');
+
     Route::post('/proses-qris', [AuthController::class, 'prosesQris'])->name('prosesQris');
 });
 
@@ -74,4 +77,3 @@ Route::get('/jurnal/export/pdf', [JurnalExportController::class, 'exportPdf'])
 Route::get('/pemesanan/export/pdf', [PemesananExportController::class, 'exportPdf'])
     ->name('pemesanan.export.pdf')
     ->middleware('auth');
-//loginnya biar inget

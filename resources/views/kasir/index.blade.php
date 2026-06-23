@@ -82,7 +82,7 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 14px;
         }
 
@@ -163,7 +163,7 @@
         .menu-card:hover { transform: translateY(-2px); }
 
         .menu-img {
-            height: 130px;
+            height: 170px;
             background: #F0E3D5;
             display: flex;
             align-items: center;
@@ -459,6 +459,13 @@
                     <input type="text" id="input-nama" placeholder="Nama pelanggan" readonly>
                 </div>
                 <div class="form-group">
+                    <label>Jenis Pesanan</label>
+                    <select id="select-jenis-pemesanan" onchange="toggleMeja()">
+                        <option value="dine_in">Dine In</option>
+                        <option value="take_away">Take Away</option>
+                    </select>
+                </div>
+                <div class="form-group" id="wrap-meja">
                     <label>No. Meja</label>
                     <select id="select-meja">
                         <option value="">Pilih Meja</option>
@@ -556,6 +563,7 @@
             <label style="font-weight: 600; font-size: 13px;">Pilih Metode:</label>
             <select id="metode-pembayaran" onchange="toggleFormCash()" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px; font-family: 'Poppins';">
                 <option value="qris">QRIS</option>
+                <option value="debit">Debit/Kartu</option>
                 <option value="cash">Cash/Tunai</option>
             </select>
         </div>
@@ -595,8 +603,9 @@
 
         <h4 style="color: #C0392B; font-weight: bold; margin-top: 10px; font-size: 18px;">Total: Rp <span id="qris-total-harga">0</span></h4>
         <p style="font-size: 11px; color: #999; margin-top: 5px;">Silakan scan menggunakan BCA, GoPay, OVO, Dana, LinkAja, dll.</p>
+        <p style="font-size: 12px; color: #9E8E84; margin-top: 10px;" id="qris-status-text">⏳ Menunggu pembayaran...</p>
 
-        <button type="button" onclick="tutupModalQRIS()" style="margin-top: 20px; background: #9E8E84; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-family: 'Poppins';">
+        <button type="button" onclick="tutupModalQRIS()" style="margin-top: 10px; background: #9E8E84; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-family: 'Poppins';">
             Tutup / Batalkan
         </button>
     </div>
@@ -613,6 +622,24 @@
         const select = document.getElementById('select-pelanggan');
         const opt    = select.options[select.selectedIndex];
         document.getElementById('input-nama').value = opt.getAttribute('data-nama') || '';
+    }
+
+    // =====================
+    // Tampilkan/sembunyikan pilihan meja sesuai jenis pesanan
+    // =====================
+    function toggleMeja() {
+        const jenis      = document.getElementById('select-jenis-pemesanan').value;
+        const wrapMeja    = document.getElementById('wrap-meja');
+        const selectMeja  = document.getElementById('select-meja');
+
+        if (jenis === 'take_away') {
+            wrapMeja.style.opacity   = '0.4';
+            selectMeja.disabled      = true;
+            selectMeja.value         = '';
+        } else {
+            wrapMeja.style.opacity   = '1';
+            selectMeja.disabled      = false;
+        }
     }
 
     // =====================
@@ -741,8 +768,9 @@
         const pelangganId = document.getElementById('select-pelanggan').value;
         if (!pelangganId) return showToast('Pilih pelanggan dulu!', 'error');
 
-        const meja = document.getElementById('select-meja').value;
-        if (!meja) return showToast('Pilih meja dulu!', 'error');
+        const jenisPemesanan = document.getElementById('select-jenis-pemesanan').value;
+        const meja         = document.getElementById('select-meja').value;
+        if (jenisPemesanan === 'dine_in' && !meja) return showToast('Pilih meja dulu!', 'error');
 
         if (keranjang.length === 0) return showToast('Keranjang masih kosong!', 'error');
 
@@ -807,6 +835,9 @@
         if (metode === 'qris') {
             tutupModalMetode();
             prosesBayarQris();
+        } else if (metode === 'debit') {
+            tutupModalMetode();
+            prosesBayarDebit();
         } else if (metode === 'cash') {
             const totalDisplay = document.getElementById('total').innerText;
             const totalHarga    = parseInt(totalDisplay.replace(/\D/g, '')) || 0;
@@ -820,16 +851,17 @@
     }
 
     // =====================
-    // Checkout via Midtrans Snap (QRIS / kartu / dll lewat Snap)
+    // Checkout Debit/Kartu via Midtrans Snap (popup dengan banyak pilihan metode)
     // =====================
-    function prosesBayarQris() {
-        const nama        = document.getElementById('input-nama').value;
-        const meja        = document.getElementById('select-meja').value;
-        const catatan     = document.getElementById('input-catatan').value;
+    function prosesBayarDebit() {
+        const nama         = document.getElementById('input-nama').value;
+        const jenisPemesanan = document.getElementById('select-jenis-pemesanan').value;
+        const meja          = document.getElementById('select-meja').value;
+        const catatan        = document.getElementById('input-catatan').value;
 
-        if (!nama)                  return showToast('Pilih pelanggan dulu!', 'error');
-        if (!meja)                  return showToast('Pilih meja dulu!', 'error');
-        if (keranjang.length === 0) return showToast('Keranjang masih kosong!', 'error');
+        if (!nama)                                          return showToast('Pilih pelanggan dulu!', 'error');
+        if (jenisPemesanan === 'dine_in' && !meja)           return showToast('Pilih meja dulu!', 'error');
+        if (keranjang.length === 0)                          return showToast('Keranjang masih kosong!', 'error');
 
         showLoading(true);
 
@@ -841,9 +873,10 @@
             },
             body: JSON.stringify({
                 nama_pelanggan: nama,
+                jenis_pemesanan: jenisPemesanan,
                 meja:           meja,
                 catatan:        catatan,
-                metode:         'qris',
+                metode:         'debit',
                 items:          keranjang,
             }),
         })
@@ -893,12 +926,128 @@
     }
 
     // =====================
+    // Checkout QRIS via Midtrans Core API (QR tampil langsung, tanpa popup)
+    // =====================
+    let qrisPollingInterval = null;
+    let qrisOrderIdAktif    = null;
+
+    function prosesBayarQris() {
+        const nama          = document.getElementById('input-nama').value;
+        const jenisPemesanan  = document.getElementById('select-jenis-pemesanan').value;
+        const meja          = document.getElementById('select-meja').value;
+        const catatan       = document.getElementById('input-catatan').value;
+
+        if (!nama)                                          return showToast('Pilih pelanggan dulu!', 'error');
+        if (jenisPemesanan === 'dine_in' && !meja)             return showToast('Pilih meja dulu!', 'error');
+        if (keranjang.length === 0)                          return showToast('Keranjang masih kosong!', 'error');
+
+        showLoading(true);
+
+        fetch('{{ route("kasir.checkout") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({
+                nama_pelanggan: nama,
+                jenis_pemesanan:  jenisPemesanan,
+                meja:           meja,
+                catatan:        catatan,
+                metode:         'qris',
+                items:          keranjang,
+            }),
+        })
+        .then(async r => {
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.message || 'Gagal membuat pesanan');
+            return data;
+        })
+        .then(data => {
+            showLoading(false);
+
+            if (!data.success) {
+                showToast(data.message || 'Gagal membuat pesanan!', 'error');
+                return;
+            }
+
+            tampilkanModalQris(data.order_id, data.qr_url, data.total);
+        })
+        .catch(err => {
+            showLoading(false);
+            showToast(err.message || 'Terjadi kesalahan server!', 'error');
+        });
+    }
+
+    function tampilkanModalQris(orderId, qrUrl, total) {
+        qrisOrderIdAktif = orderId;
+
+        document.getElementById('qris-order-id').innerText      = 'Order ID: ' + orderId;
+        document.getElementById('qris-total-harga').innerText   = total.toLocaleString('id-ID');
+        document.getElementById('qris-status-text').innerText   = '⏳ Menunggu pembayaran...';
+        document.getElementById('qris-status-text').style.color = '#9E8E84';
+
+        const imgEl     = document.getElementById('gambar-qris');
+        const loadingEl = document.getElementById('loading-text');
+
+        imgEl.style.display     = 'none';
+        loadingEl.style.display = 'block';
+
+        imgEl.onload = function () {
+            imgEl.style.display     = 'block';
+            loadingEl.style.display = 'none';
+        };
+        imgEl.src = qrUrl;
+
+        document.getElementById('modal-qris').style.display = 'flex';
+
+        mulaiPollingQris(orderId);
+    }
+
+    function mulaiPollingQris(orderId) {
+        hentikanPollingQris();
+
+        qrisPollingInterval = setInterval(() => {
+            fetch(`/kasir/check-status/${orderId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+
+                    if (data.lunas) {
+                        hentikanPollingQris();
+                        document.getElementById('qris-status-text').innerText   = '✅ Pembayaran berhasil!';
+                        document.getElementById('qris-status-text').style.color = '#16A34A';
+
+                        setTimeout(() => {
+                            document.getElementById('modal-qris').style.display = 'none';
+                            showToast('Pembayaran QRIS berhasil! 🎉', 'success');
+                            resetForm();
+                        }, 1200);
+                    } else if (['deny', 'expire', 'cancel'].includes(data.transaction_status)) {
+                        hentikanPollingQris();
+                        document.getElementById('qris-status-text').innerText   = '✗ Pembayaran dibatalkan/kedaluwarsa.';
+                        document.getElementById('qris-status-text').style.color = '#DC2626';
+                    }
+                })
+                .catch(() => { /* abaikan, coba lagi di polling berikutnya */ });
+        }, 4000);
+    }
+
+    function hentikanPollingQris() {
+        if (qrisPollingInterval) {
+            clearInterval(qrisPollingInterval);
+            qrisPollingInterval = null;
+        }
+    }
+
+    // =====================
     // Checkout cash/tunai
     // =====================
     function simpanTransaksiCash(totalHarga, uangBayar) {
-        const namaPemesan = document.getElementById('input-nama').value;
-        const noMeja      = document.getElementById('select-meja').value;
-        const catatan     = document.getElementById('input-catatan').value;
+        const namaPemesan  = document.getElementById('input-nama').value;
+        const jenisPemesanan = document.getElementById('select-jenis-pemesanan').value;
+        const noMeja       = document.getElementById('select-meja').value;
+        const catatan      = document.getElementById('input-catatan').value;
 
         showLoading(true);
 
@@ -910,6 +1059,7 @@
             },
             body: JSON.stringify({
                 nama_pelanggan: namaPemesan,
+                jenis_pemesanan:  jenisPemesanan,
                 meja:           noMeja,
                 catatan:        catatan,
                 metode:         'cash',
@@ -943,10 +1093,13 @@
     function resetForm() {
         keranjang = [];
         renderKeranjang();
-        document.getElementById('select-pelanggan').value = '';
-        document.getElementById('input-nama').value        = '';
-        document.getElementById('select-meja').value       = '';
-        document.getElementById('input-catatan').value     = '';
+        document.getElementById('select-pelanggan').value      = '';
+        document.getElementById('input-nama').value             = '';
+        document.getElementById('select-jenis-pemesanan').value   = 'dine_in';
+        document.getElementById('select-meja').value             = '';
+        document.getElementById('select-meja').disabled          = false;
+        document.getElementById('wrap-meja').style.opacity       = '1';
+        document.getElementById('input-catatan').value           = '';
     }
 
     // =====================
@@ -970,9 +1123,9 @@
     }
 
     function tutupModalQRIS() {
+        hentikanPollingQris();
         document.getElementById('modal-qris').style.display = 'none';
     }
 </script>
 </body>
 </html>
-//biar data masuk ke pemesanan

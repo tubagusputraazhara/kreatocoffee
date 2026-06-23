@@ -37,7 +37,7 @@ class PemesananResource extends Resource
                     ->description('Informasi pelanggan, meja, dan kode pesanan')
                     ->icon('heroicon-o-clipboard-document-list')
                     ->schema([
-                        Grid::make(3)->schema([
+                        Grid::make(4)->schema([
                             TextInput::make('kode_pemesanan')
                                 ->label('Kode Pemesanan')
                                 ->default(fn () => Pemesanan::generateKode())
@@ -54,9 +54,20 @@ class PemesananResource extends Resource
                                 ->searchable()
                                 ->required(),
 
+                            Select::make('jenis_pemesanan')
+                                ->label('Jenis Pemesanan')
+                                ->options([
+                                    'dine_in'   => 'Dine In',
+                                    'take_away' => 'Take Away',
+                                ])
+                                ->default('dine_in')
+                                ->reactive()
+                                ->required(),
+
                             TextInput::make('no_meja')
                                 ->label('No Meja')
-                                ->required(),
+                                ->visible(fn (Get $get) => $get('jenis_pemesanan') !== 'take_away')
+                                ->required(fn (Get $get) => $get('jenis_pemesanan') !== 'take_away'),
                         ]),
 
                         Grid::make(2)->schema([
@@ -150,10 +161,10 @@ class PemesananResource extends Resource
                             ->required(),
                     ]),
 
-                Section::make('Status')
+                Section::make('Status & Pembayaran')
                     ->icon('heroicon-o-credit-card')
                     ->schema([
-                        Grid::make(2)->schema([
+                        Grid::make(3)->schema([
                             TextInput::make('total_harga')
                                 ->label('Total Harga')
                                 ->numeric()
@@ -162,7 +173,7 @@ class PemesananResource extends Resource
                                 ->required(),
 
                             Select::make('status')
-                                ->label('Status Pemesanan')
+                                ->label('Status Pembayaran')
                                 ->options([
                                     'pending' => 'Pending',
                                     'selesai' => 'Selesai',
@@ -184,27 +195,48 @@ class PemesananResource extends Resource
     {
         return $table
             ->columns([
-                Stack::make([
-                    TextColumn::make('kode_pemesanan')
-                        ->label('Kode')
-                        ->weight('bold')
-                        ->color('primary')
-                        ->icon('heroicon-o-hashtag')
-                        ->searchable(),
+              Stack::make([
+    TextColumn::make('kode_pemesanan')
+        ->label('Kode')
+        ->weight('bold')
+        ->color('primary')
+        ->icon('heroicon-o-hashtag')
+        ->searchable(),
 
-                    TextColumn::make('nama_pemesan')
-                        ->label('Pelanggan')
-                        ->icon('heroicon-o-user')
-                        ->color('gray')
-                        ->searchable(),
+    TextColumn::make('nama_pemesan')
+        ->label('Pelanggan')
+        ->icon('heroicon-o-user')
+        ->color('gray')
+        ->searchable(),
 
-                    TextColumn::make('no_meja')
-                        ->label('Meja')
-                        ->formatStateUsing(fn ($state) => 'Meja ' . $state)
-                        ->icon('heroicon-o-map-pin')
-                        ->size('sm')
-                        ->color('gray'),
-                ])->space(2),
+    TextColumn::make('jenis_pemesanan')
+        ->label('')
+        ->badge()
+        ->formatStateUsing(fn ($state) => match ($state) {
+            'dine_in' => 'Dine In',
+            'take_away' => 'Take Away',
+            default => ucfirst($state),
+        })
+        ->color(fn ($state) => match ($state) {
+            'dine_in' => 'success',
+            'take_away' => 'warning',
+            default => 'gray',
+        }),
+
+    TextColumn::make('no_meja')
+        ->label('')
+        ->formatStateUsing(function ($state, $record) {
+            if (!$record || $record->jenis_pemesanan !== 'dine_in') {
+                return null;
+            }
+
+            return 'Meja ' . $state;
+        })
+        ->icon('heroicon-o-map-pin')
+        ->size('sm')
+        ->color('gray'),
+
+])->space(2),
 
                 TextColumn::make('details_summary')
                     ->label('Item Pesanan')
@@ -228,11 +260,11 @@ class PemesananResource extends Resource
                     ->alignEnd(),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label('Status Pembayaran')
                     ->badge()
                     ->icon(fn ($state) => match ($state) {
                         'pending' => 'heroicon-o-clock',
-                        'selesai' => 'heroicon-o-check-circle',
+                        'selesai' => 'heroicon-o-check-badge',
                         'batal'   => 'heroicon-o-x-circle',
                         default   => 'heroicon-o-question-mark-circle',
                     })
@@ -263,10 +295,10 @@ class PemesananResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->striped()
-            ->recordClasses(fn ($record) => match ($record->status) {
-                'selesai' => 'border-l-4 border-success-500',
-                'batal'   => 'border-l-4 border-danger-500',
-                default   => 'border-l-4 border-warning-500',
+            ->recordClasses(fn ($record) => match ($record->status_pemesanan) {
+                'selesai'    => 'border-l-4 border-success-500',
+                'diantarkan' => 'border-l-4 border-info-500',
+                default      => 'border-l-4 border-warning-500',
             })
             ->headerActions([
                 Tables\Actions\Action::make('kasir')
@@ -280,12 +312,27 @@ class PemesananResource extends Resource
                     ->icon('heroicon-o-plus-circle'),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status_pemesanan')
+                    ->label('Status Pemesanan')
+                    ->options([
+                        'diproses'   => 'Diproses',
+                        'diantarkan' => 'Diantarkan',
+                        'selesai'    => 'Selesai',
+                    ]),
+
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('Status')
+                    ->label('Status Pembayaran')
                     ->options([
                         'pending' => 'Pending',
                         'selesai' => 'Selesai',
                         'batal'   => 'Batal',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('jenis_pemesanan')
+                    ->label('Jenis Pemesanan')
+                    ->options([
+                        'dine_in'   => 'Dine In',
+                        'take_away' => 'Take Away',
                     ]),
 
                 Tables\Filters\SelectFilter::make('sumber')
@@ -317,4 +364,3 @@ class PemesananResource extends Resource
         ];
     }
 }
-//ubah tampilan dan nambahin sesuatu
