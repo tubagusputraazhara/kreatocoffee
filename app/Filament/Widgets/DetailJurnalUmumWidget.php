@@ -9,6 +9,8 @@ class DetailJurnalUmumWidget extends Widget
 {
     protected static string $view = 'filament.widgets.detail-jurnal-umum-widget';
 
+    protected static bool $isDiscovered = false;
+
     protected int|string|array $columnSpan = 'full';
 
     protected static ?int $sort = 1;
