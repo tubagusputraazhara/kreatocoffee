@@ -24,7 +24,7 @@ class DetailJurnalUmumWidget extends Widget
 
     public function filterJurnal(): void
     {
-        // re-render otomatis
+        //
     }
 
     public function getViewData(): array
@@ -33,14 +33,13 @@ class DetailJurnalUmumWidget extends Widget
 
         if ($this->periode) {
             [$year, $month] = explode('-', $this->periode);
+
             $query->whereYear('tanggal_jurnal', $year)
-                  ->whereMonth('tanggal_jurnal', $month);
+                ->whereMonth('tanggal_jurnal', $month);
         }
 
-        $jurnals = $query->orderBy('tanggal_jurnal')->get();
-
         return [
-            'jurnals' => $jurnals,
+            'jurnals' => $query->orderBy('tanggal_jurnal')->get(),
             'periode' => $this->periode,
         ];
     }

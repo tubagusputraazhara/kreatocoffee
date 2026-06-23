@@ -12,10 +12,9 @@ class Dashboard extends BaseDashboard
 
     protected static ?string $title = 'Dashboard';
 
-    protected function getHeaderWidgets(): array
+    public function getHeaderWidgets(): array
     {
         return [
-            \Filament\Widgets\AccountWidget::class,
             \App\Filament\Widgets\DashboardStats::class,
             \App\Filament\Widgets\PenjualanPerBulanChart::class,
             \App\Filament\Widgets\PenjualanPerPembeliChart::class,
