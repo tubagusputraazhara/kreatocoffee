@@ -28,6 +28,7 @@ class Karyawan extends Model
         'jenis_kelamin',
         'tanggal_lahir',
         'jabatan',
+        'alamat',
 
     ];
 
