@@ -22,4 +22,17 @@ class Menu extends Model
         'gambar',
         'deskripsi',
     ];
+
+    /**
+     * Relasi ke detail pemesanan
+     * 1 Menu bisa muncul di banyak detail pemesanan
+     */
+    public function details()
+    {
+        return $this->hasMany(
+            DetailPemesanan::class,
+            'id_menu',
+            'id_menu'
+        );
+    }
 }

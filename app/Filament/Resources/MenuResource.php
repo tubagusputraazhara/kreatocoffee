@@ -46,7 +46,10 @@ class MenuResource extends Resource
                 TextInput::make('nama_menu')->required(),
                 TextInput::make('harga')->numeric()->prefix('Rp')->required(),
                 Select::make('kategori')
-                    ->options(['Makanan' => 'Makanan', 'Minuman' => 'Minuman'])
+                    ->options(['Main Course' => 'Main Course', 'Snacks' => 'Snacks', 
+                    'Spesial Day' => 'Spesial Day', 'Others' => 'Others', 'Sweet Corner' => 'Sweet Corner',
+                    'Expresso Based' => 'Expresso Based', 'Special Tea' => 'Special Tea', 'Espresso Based' => 'Espresso Based', 
+                    'Non Coffee' => 'Non Coffee', 'Signature' => 'Signature'])
                     ->required(),
                 FileUpload::make('gambar')->directory('menu-images')->image()->required(),
                 Textarea::make('deskripsi')->label('Deskripsi Menu')->required(),
