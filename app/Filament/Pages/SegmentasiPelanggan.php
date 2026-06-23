@@ -26,7 +26,6 @@ class SegmentasiPelanggan extends Page
 
     private function getSegmentasi(): array
     {
-        // Ambil data RFM per pelanggan
         $data = DB::table('pemesanan')
             ->where('status', 'lunas')
             ->select(
@@ -44,7 +43,6 @@ class SegmentasiPelanggan extends Page
 
         $now = now();
 
-        // Hitung Recency (hari sejak terakhir pesan)
         $rfmData = $data->map(function ($row) use ($now) {
             return [
                 'nama'      => $row->nama_pemesan,
@@ -54,39 +52,44 @@ class SegmentasiPelanggan extends Page
             ];
         })->values()->toArray();
 
-        // Normalisasi min-max agar skala seimbang
         $recencies   = array_column($rfmData, 'recency');
         $frequencies = array_column($rfmData, 'frequency');
         $monetaries  = array_column($rfmData, 'monetary');
 
-        $normalize = function (float $value, float $min, float $max): float {
-            return $max === $min ? 0 : ($value - $min) / ($max - $min);
+        $normalize = function ($value, $min, $max) {
+            return ($max - $min) == 0
+                ? 0
+                : ($value - $min) / ($max - $min);
         };
 
-        $minR = min($recencies);  $maxR = max($recencies);
-        $minF = min($frequencies); $maxF = max($frequencies);
-        $minM = min($monetaries);  $maxM = max($monetaries);
+        $minR = min($recencies);
+        $maxR = max($recencies);
 
-        // Buat samples untuk KMeans [R_norm, F_norm, M_norm]
+        $minF = min($frequencies);
+        $maxF = max($frequencies);
+
+        $minM = min($monetaries);
+        $maxM = max($monetaries);
+
         $samples = [];
+
         foreach ($rfmData as $row) {
             $samples[] = [
-                $normalize($row['recency'],   $minR, $maxR),
+                $normalize($row['recency'], $minR, $maxR),
                 $normalize($row['frequency'], $minF, $maxF),
-                $normalize($row['monetary'],  $minM, $maxM),
+                $normalize($row['monetary'], $minM, $maxM),
             ];
         }
 
-        // Jalankan K-Means dengan K=3
         $kmeans = new KMeans(3);
         $clusters = $kmeans->cluster($samples);
 
-        // Gabungkan hasil cluster ke data asli
         $result = [];
+
         foreach ($clusters as $clusterId => $clusterSamples) {
             foreach ($clusterSamples as $sample) {
-                // Cari index sample asli
                 $idx = array_search($sample, $samples);
+
                 if ($idx !== false) {
                     $rfmData[$idx]['cluster'] = $clusterId;
                     $result[] = $rfmData[$idx];
@@ -94,29 +97,48 @@ class SegmentasiPelanggan extends Page
             }
         }
 
-        // Tentukan label cluster berdasarkan rata-rata F+M
         $clusterScores = [];
+
         foreach ($result as $row) {
             $cid = $row['cluster'];
-            $clusterScores[$cid][] = $row['frequency'] + ($row['monetary'] / 10000);
+            $clusterScores[$cid][] =
+                $row['frequency'] +
+                ($row['monetary'] / 10000);
         }
+
         $clusterAvg = [];
+
         foreach ($clusterScores as $cid => $scores) {
-            $clusterAvg[$cid] = array_sum($scores) / count($scores);
+            $clusterAvg[$cid] =
+                array_sum($scores) / count($scores);
         }
+
         arsort($clusterAvg);
+
         $ranking = array_keys($clusterAvg);
 
         $labels = [
-            $ranking[0] => ['label' => 'Pelanggan Setia',    'color' => 'success', 'badge' => '🟢'],
-            $ranking[1] => ['label' => 'Pelanggan Potensial','color' => 'warning', 'badge' => '🟡'],
-            $ranking[2] => ['label' => 'Pelanggan Jarang',   'color' => 'danger',  'badge' => '🔴'],
+            $ranking[0] => [
+                'label' => 'Pelanggan Setia',
+                'color' => 'success',
+                'badge' => '🟢',
+            ],
+            $ranking[1] => [
+                'label' => 'Pelanggan Potensial',
+                'color' => 'warning',
+                'badge' => '🟡',
+            ],
+            $ranking[2] => [
+                'label' => 'Pelanggan Jarang',
+                'color' => 'danger',
+                'badge' => '🔴',
+            ],
         ];
 
         foreach ($result as &$row) {
-            $row['label'] = $labels[$row['cluster']]['label']  ?? '-';
-            $row['color'] = $labels[$row['cluster']]['color']  ?? 'gray';
-            $row['badge'] = $labels[$row['cluster']]['badge']  ?? '';
+            $row['label'] = $labels[$row['cluster']]['label'];
+            $row['color'] = $labels[$row['cluster']]['color'];
+            $row['badge'] = $labels[$row['cluster']]['badge'];
         }
 
         return $result;
@@ -124,31 +146,44 @@ class SegmentasiPelanggan extends Page
 
     private function buildChartData(array $pelanggan): array
     {
-        $colorMap = [
-            'Pelanggan Setia'     => 'rgba(34,197,94,0.8)',
-            'Pelanggan Potensial' => 'rgba(234,179,8,0.8)',
-            'Pelanggan Jarang'    => 'rgba(239,68,68,0.8)',
+        $datasets = [];
+
+        $grouped = [
+            'Pelanggan Setia' => [],
+            'Pelanggan Potensial' => [],
+            'Pelanggan Jarang' => [],
         ];
 
-        $datasets = [];
-        $grouped  = [];
-
         foreach ($pelanggan as $p) {
+
             $grouped[$p['label']][] = [
-                'x' => $p['frequency'],
+                'x' => $p['recency'],
                 'y' => $p['monetary'],
                 'nama' => $p['nama'],
+                'frequency' => $p['frequency'],
             ];
         }
 
-        foreach ($grouped as $label => $points) {
-            $datasets[] = [
-                'label'           => $label,
-                'data'            => $points,
-                'backgroundColor' => $colorMap[$label] ?? 'rgba(100,100,100,0.8)',
-                'pointRadius'     => 6,
-            ];
-        }
+        $datasets[] = [
+            'label' => 'Pelanggan Setia',
+            'data' => $grouped['Pelanggan Setia'],
+            'backgroundColor' => 'rgba(34,197,94,0.8)',
+            'pointRadius' => 8,
+        ];
+
+        $datasets[] = [
+            'label' => 'Pelanggan Potensial',
+            'data' => $grouped['Pelanggan Potensial'],
+            'backgroundColor' => 'rgba(234,179,8,0.8)',
+            'pointRadius' => 8,
+        ];
+
+        $datasets[] = [
+            'label' => 'Pelanggan Jarang',
+            'data' => $grouped['Pelanggan Jarang'],
+            'backgroundColor' => 'rgba(239,68,68,0.8)',
+            'pointRadius' => 8,
+        ];
 
         return $datasets;
     }

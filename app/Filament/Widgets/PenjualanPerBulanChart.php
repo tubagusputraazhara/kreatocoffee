@@ -8,11 +8,13 @@ use Illuminate\Support\Carbon;
 
 class PenjualanPerBulanChart extends ChartWidget
 {
+    protected static bool $isDiscovered = false;
+
     protected static ?string $heading = 'Penjualan Per Bulan';
 
     protected static ?int $sort = 3;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 1;
 
     public ?string $filter = null;
 
@@ -50,7 +52,6 @@ class PenjualanPerBulanChart extends ChartWidget
         $data = [];
 
         for ($bulan = 1; $bulan <= 12; $bulan++) {
-
             $total = Pemesanan::whereYear('created_at', $activeFilter)
                 ->whereMonth('created_at', $bulan)
                 ->sum('total_harga');
@@ -68,7 +69,6 @@ class PenjualanPerBulanChart extends ChartWidget
                     'fill' => true,
                 ],
             ],
-
             'labels' => $labels,
         ];
     }
