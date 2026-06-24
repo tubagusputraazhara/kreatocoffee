@@ -35,6 +35,26 @@ Route::prefix('order')->name('order.')->group(function () {
     Route::post('/update-status', [OrderingController::class, 'updateStatus'])->name('updateStatus');
 });
 
+// =========================================================================
+// KASIR POS
+// =========================================================================
+Route::prefix('kasir')->name('kasir.')->group(function () {
+
+    // Alamat utama kasir
+    Route::get('/', [KasirController::class, 'index'])->name('index');
+
+    // Proses submit form login (action form mengarah ke rute kasir)
+    Route::post('/login-proses', [AuthController::class, 'login'])->name('login-proses');
+
+    Route::post('/simpan-pesanan', [PesananController::class, 'simpan'])->name('simpan');
+    Route::get('/detail/{id}', [PesananController::class, 'showDetail'])->name('detail');
+
+    Route::post('/add-to-cart', [KasirController::class, 'addToCart'])->name('addToCart');
+    Route::post('/remove-from-cart', [KasirController::class, 'removeFromCart'])->name('removeFromCart');
+    Route::post('/checkout', [KasirController::class, 'checkout'])->name('checkout');
+    Route::post('/payment', [KasirController::class, 'payment'])->name('payment');
+    Route::post('/payment-success', [KasirController::class, 'paymentSuccess'])->name('paymentSuccess');
+
 // =========================
 // KASIR POS
 // =========================

@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\KaryawanResource\Pages;
 use App\Filament\Resources\KaryawanResource\RelationManagers;
 use App\Models\Karyawan;
-use App\Models\Jabatan; // tambahan: import model Jabatan untuk dropdown
+use App\Models\Jabatan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,7 +14,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-// tambahan untuk komponen input form
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -23,19 +22,16 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Radio;
-// tambahan untuk komponen kolom
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Forms\Components\Grid;
 
-// tambahan untuk karyawan exporter
 use Filament\Tables\Actions\ExportAction;
 use Filament\Tables\Actions\ExportBulkAction;
 use App\Filament\Exports\KaryawanExporter;
 
-// tambahan untuk tombol unduh pdf
 use Filament\Tables\Actions\Action;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -81,16 +77,19 @@ class KaryawanResource extends Resource
                     ->label('Tanggal Lahir')
                     ->required(),
 
-                // tambahan: ganti TextInput jabatan menjadi Select dari master data Jabatan
                 Select::make('jabatan')
                     ->label('Jabatan')
                     ->options(
-                        Jabatan::all()->pluck('jabatan', 'jabatan') // value & label = nama jabatan
+                        Jabatan::all()->pluck('jabatan', 'jabatan')
                     )
                     ->searchable()
                     ->required()
                     ->placeholder('Pilih Jabatan'),
 
+                Textarea::make('alamat')
+                    ->label('Alamat')
+                    ->rows(3)
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -120,7 +119,11 @@ class KaryawanResource extends Resource
                     ->label('Jabatan')
                     ->sortable(),
 
-
+                TextColumn::make('alamat')
+                    ->label('Alamat')
+                    ->limit(50)
+                    ->wrap()
+                    ->searchable(),
             ])
             ->filters([
                 //
@@ -130,13 +133,9 @@ class KaryawanResource extends Resource
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
-
-            // tombol header tambahan
             ->headerActions([
-                // tombol export csv dan excel
                 ExportAction::make()->exporter(KaryawanExporter::class)->color('success'),
 
-                // tombol unduh PDF
                 Action::make('downloadPdf')
                     ->label('Unduh PDF')
                     ->icon('heroicon-o-document-arrow-down')
@@ -152,13 +151,11 @@ class KaryawanResource extends Resource
                         );
                     })
             ])
-
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
 
-                // tambahan export excel bulk
                 ExportBulkAction::make()->exporter(KaryawanExporter::class)
             ]);
     }
