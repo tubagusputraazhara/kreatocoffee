@@ -36,7 +36,8 @@ class PemesananResource extends Resource
                 ->description('Informasi pelanggan, meja, dan kode pesanan')
                 ->icon('heroicon-o-clipboard-document-list')
                 ->schema([
-                    Grid::make(3)->schema([
+                    // ✅ Grid 4 kolom: tambahan field jenis_pemesanan dari teman
+                    Grid::make(4)->schema([
                         TextInput::make('kode_pemesanan')
                             ->label('Kode Pemesanan')
                             ->default(fn () => Pemesanan::generateKode())
@@ -53,9 +54,22 @@ class PemesananResource extends Resource
                             ->searchable()
                             ->required(),
 
+                        // ✅ Tambahan dari teman: jenis pemesanan (Dine In / Take Away)
+                        Select::make('jenis_pemesanan')
+                            ->label('Jenis Pemesanan')
+                            ->options([
+                                'dine_in'   => 'Dine In',
+                                'take_away' => 'Take Away',
+                            ])
+                            ->default('dine_in')
+                            ->reactive()
+                            ->required(),
+
+                        // ✅ no_meja sekarang conditional: hanya tampil jika bukan take_away
                         TextInput::make('no_meja')
                             ->label('No Meja')
-                            ->required(),
+                            ->visible(fn (Get $get) => $get('jenis_pemesanan') !== 'take_away')
+                            ->required(fn (Get $get) => $get('jenis_pemesanan') !== 'take_away'),
                     ]),
 
                     Grid::make(2)->schema([
@@ -159,7 +173,7 @@ class PemesananResource extends Resource
                             ->readOnly()
                             ->required(),
 
-                        // ✅ Status pembayaran (versi main)
+                        // ✅ Status pembayaran (versi main — nilai belum_lunas/lunas/batal dipertahankan)
                         Select::make('status')
                             ->label('Status Pembayaran')
                             ->options([
@@ -170,7 +184,7 @@ class PemesananResource extends Resource
                             ->default('belum_lunas')
                             ->required(),
 
-                        // ✅ Status pesanan (versi main)
+                        // ✅ Status pesanan (versi main — field name status_pesanan dipertahankan)
                         Select::make('status_pesanan')
                             ->label('Status Pesanan')
                             ->options([
@@ -204,9 +218,22 @@ class PemesananResource extends Resource
                     ->icon('heroicon-o-hashtag')
                     ->searchable(),
 
+                // ✅ Tambahan dari teman: kolom jenis pemesanan (Dine In / Take Away)
+                TextColumn::make('jenis_pemesanan')
+                    ->label('Jenis')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'take_away' ? 'Take Away' : 'Dine In')
+                    ->icon(fn ($state) => $state === 'take_away'
+                        ? 'heroicon-o-shopping-bag'
+                        : 'heroicon-o-building-storefront')
+                    ->color(fn ($state) => $state === 'take_away' ? 'warning' : 'info'),
+
+                // ✅ no_meja handle kasus take_away (tambahan dari teman)
                 TextColumn::make('no_meja')
                     ->label('No Meja')
-                    ->getStateUsing(fn ($record) => $record->no_meja ?? '-')
+                    ->getStateUsing(fn ($record) => $record->jenis_pemesanan === 'take_away'
+                        ? '-'
+                        : ($record->no_meja ?? '-'))
                     ->sortable(),
 
                 TextColumn::make('nama_pemesan')
@@ -235,10 +262,16 @@ class PemesananResource extends Resource
                     ->color('success')
                     ->alignEnd(),
 
-                // ✅ Status pembayaran
+                // ✅ Status pembayaran (nilai main dipertahankan, icon dari teman ditambahkan)
                 TextColumn::make('status')
                     ->label('Pembayaran')
                     ->badge()
+                    ->icon(fn ($state) => match ($state) {
+                        'belum_lunas' => 'heroicon-o-clock',
+                        'lunas'       => 'heroicon-o-banknotes',
+                        'batal'       => 'heroicon-o-x-circle',
+                        default       => 'heroicon-o-question-mark-circle',
+                    })
                     ->color(fn ($state) => match ($state) {
                         'belum_lunas' => 'warning',
                         'lunas'       => 'success',
@@ -252,10 +285,16 @@ class PemesananResource extends Resource
                         default       => $state,
                     }),
 
-                // ✅ Status pesanan
+                // ✅ Status pesanan (field name status_pesanan dipertahankan, icon dari teman ditambahkan)
                 TextColumn::make('status_pesanan')
                     ->label('Status Pesanan')
                     ->badge()
+                    ->icon(fn ($state) => match ($state) {
+                        'diproses'   => 'heroicon-o-fire',
+                        'diantarkan' => 'heroicon-o-truck',
+                        'selesai'    => 'heroicon-o-check-circle',
+                        default      => 'heroicon-o-question-mark-circle',
+                    })
                     ->color(fn ($state) => match ($state) {
                         'diproses'   => 'warning',
                         'diantarkan' => 'info',
@@ -322,6 +361,14 @@ class PemesananResource extends Resource
                         'selesai'    => 'Selesai',
                     ]),
 
+                // ✅ Tambahan dari teman: filter jenis pemesanan
+                Tables\Filters\SelectFilter::make('jenis_pemesanan')
+                    ->label('Jenis Pemesanan')
+                    ->options([
+                        'dine_in'   => 'Dine In',
+                        'take_away' => 'Take Away',
+                    ]),
+
                 Tables\Filters\SelectFilter::make('sumber')
                     ->label('Sumber')
                     ->options([
@@ -330,7 +377,7 @@ class PemesananResource extends Resource
                     ]),
             ])
             ->actions([
-                // ✅ Tandai Lunas Cash
+                // ✅ Tandai Lunas Cash (versi main dipertahankan)
                 Tables\Actions\Action::make('lunas_cash')
                     ->label('Tandai Lunas (Cash)')
                     ->icon('heroicon-o-banknotes')
@@ -347,24 +394,50 @@ class PemesananResource extends Resource
                         }
                     }),
 
-                // ✅ Tombol status pesanan
-                Tables\Actions\Action::make('diantarkan')
-                    ->label('Sudah Diantarkan')
-                    ->icon('heroicon-o-truck')
-                    ->color('info')
-                    ->visible(fn ($record) => $record->status_pesanan === 'diproses')
-                    ->requiresConfirmation()
-                    ->modalHeading('Konfirmasi Pesanan Telah Diantar')
-                    ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.')
-                    ->action(fn ($record) => $record->update(['status_pesanan' => 'diantarkan'])),
+                // ✅ Tambahan dari teman: ActionGroup + Filament Notification
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\Action::make('diantarkan')
+                        ->label('Sudah Diantarkan')
+                        ->icon('heroicon-o-truck')
+                        ->color('info')
+                        ->visible(fn ($record) => $record->status_pesanan === 'diproses')
+                        ->requiresConfirmation()
+                        ->modalIcon('heroicon-o-truck')
+                        ->modalHeading('Konfirmasi Pesanan Telah Diantar')
+                        ->modalDescription('Pastikan pesanan sudah diantarkan sebelum mengkonfirmasi.')
+                        ->modalSubmitActionLabel('Ya, Sudah Diantarkan')
+                        ->action(function ($record) {
+                            $record->update(['status_pesanan' => 'diantarkan']);
 
-                Tables\Actions\Action::make('selesai_pesanan')
-                    ->label('Selesai')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->visible(fn ($record) => $record->status_pesanan === 'diantarkan')
-                    ->requiresConfirmation()
-                    ->action(fn ($record) => $record->update(['status_pesanan' => 'selesai'])),
+                            \Filament\Notifications\Notification::make()
+                                ->title('Pesanan sedang diantarkan')
+                                ->info()
+                                ->send();
+                        }),
+
+                    Tables\Actions\Action::make('selesai_pesanan')
+                        ->label('Selesai')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->visible(fn ($record) => $record->status_pesanan === 'diantarkan')
+                        ->requiresConfirmation()
+                        ->modalIcon('heroicon-o-check-circle')
+                        ->modalHeading('Selesaikan Pesanan Ini?')
+                        ->modalSubmitActionLabel('Ya, Selesai')
+                        ->action(function ($record) {
+                            $record->update(['status_pesanan' => 'selesai']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Pesanan selesai')
+                                ->success()
+                                ->send();
+                        }),
+                ])
+                    ->label('Proses Pesanan')
+                    ->icon('heroicon-o-fire')
+                    ->color('info')
+                    ->button()
+                    ->visible(fn ($record) => $record->status_pesanan !== 'selesai'),
 
                 Tables\Actions\EditAction::make()
                     ->icon('heroicon-o-pencil-square'),
